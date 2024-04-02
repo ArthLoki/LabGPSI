@@ -1,1 +1,1 @@
-# LabGPSI
+# ProjetoRedesNeurais
