@@ -1,10 +1,10 @@
 import os
-from ProjetoRedesNeurais.LabGPSI.auxiliary.readFiles import writeCSV
+from LabGPSI.LabGPSI.auxiliary.readFiles import writeCSV
 
-from ProjetoRedesNeurais.LabGPSI.auxiliary.globalVariables import current_path, image_path
-from ProjetoRedesNeurais.LabGPSI.auxiliary.globalVariables import csv_filename2
+from LabGPSI.LabGPSI.auxiliary.globalVariables import current_path
+from LabGPSI.LabGPSI.auxiliary.globalVariables import csv_filename2
 
-from ProjetoRedesNeurais.LabGPSI.exif.getExif import getExifDict
+from LabGPSI.LabGPSI.exif.getExif import getExifDict
 
 
 # Gets the list of labels in header

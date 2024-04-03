@@ -1,4 +1,4 @@
-from ProjetoRedesNeurais.LabGPSI.auxiliary.getPath import get_base_path, editPath, editPathV2
+from LabGPSI.LabGPSI.auxiliary.getPath import get_base_path, editPath, editPathV2
 import os
 import string
 

@@ -1,5 +1,5 @@
 import shutil
-from ProjetoRedesNeurais.LabGPSI.auxiliary.globalVariables import current_path
+from LabGPSI.LabGPSI.auxiliary.globalVariables import current_path
 
 
 def openTXT(path, filename):

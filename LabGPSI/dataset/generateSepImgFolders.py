@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from ProjetoRedesNeurais.LabGPSI.auxiliary.globalVariables import image_path, current_path
+from LabGPSI.LabGPSI.auxiliary.globalVariables import image_path_v2 as image_path, current_path
 
 lab_path = os.path.join(os.path.join(current_path.split('/')[0], '/'), '/'.join(current_path.split('/')[1:-1]))
 
