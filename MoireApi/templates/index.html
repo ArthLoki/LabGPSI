@@ -1,0 +1,42 @@
+{% block content %}
+
+  <body>
+    <h1>Moire Pattern Detection API</h1>
+    <hr>
+
+    <form method=post enctype=multipart/form-data>
+      <div>
+        <label for="savedmodel"><strong>Choose your model:</strong></label>
+        <input type='file' name='savedmodel' id='savedmodel'>
+      </div>
+
+      <br>
+
+      <div>
+        <label for="file"><strong>Choose your image:<span style='color: red;'>*</span></strong></label>
+        <input type='file' name='file' id='file'>
+      </div>
+
+      <br>
+
+      <div>
+        <input type="submit" id="submit_button" name="submit_button" value="Submit">
+      </div>
+    </form>
+
+  </body>
+
+  <script>
+    saved_model_input = document.getElementById('savedmodel');
+    empty_model_folder = {{ empty_model_folder|tojson }};
+    if (empty_model_folder){
+      saved_model_input.disabled = false;
+      console.log('A model will be uploaded. It may take a while.');
+    }
+    else {
+      saved_model_input.disabled = true;
+      console.log('A model was already uploaded. Just upload a image to detect the moire pattern.');
+    }
+  </script>
+  
+{% endblock %}
