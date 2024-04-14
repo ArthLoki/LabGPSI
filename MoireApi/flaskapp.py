@@ -20,12 +20,12 @@ app.config['FLASK_ENV'] = 'development'  # Set Flask environment to development
 app.debug = True  # Enable Flask debug mode
 # app.add_url_rule("/uploads/<name>", endpoint="download_file", build_only=True)
 
-## Create folders is they don't exist
+## Create folders if they don't exist
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 if not os.path.exists(app.config['MODEL_FOLDER']):
-    os.makedirs(app.config['MODE_FOLDER'])
+    os.makedirs(app.config['MODEL_FOLDER'])
 
 
 ## Check if the file extension is allowed
