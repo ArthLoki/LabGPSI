@@ -42,9 +42,6 @@ def load_and_evaluate(model_path, test_dir):
     steps_per_epoch = np.ceil(test_generator.samples / test_generator.batch_size)
     # print('test_generator.samples:', test_generator.samples, 'test_generator.batch_size:', test_generator.batch_size)
 
-    if steps_per_epoch == 0.0:
-        steps_per_epoch = 1.0
-
     # Avalia o modelo usando o conjunto de dados de teste
     logging.info("Avaliando o modelo...")
     results = model.evaluate(test_generator, steps=steps_per_epoch)
