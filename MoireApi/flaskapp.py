@@ -6,8 +6,8 @@ from moire.test_04 import load_and_evaluate
 
 import os
 
-UPLOAD_FOLDER = './uploads/images'
-MODEL_FOLDER = './uploads/savedmodels'
+UPLOAD_FOLDER = 'uploads/images'
+MODEL_FOLDER = 'uploads/savedmodels'
 
 ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
@@ -83,14 +83,18 @@ def homepage():
             # return redirect(url_for('download_file', name=filename))
 
             # chamada do moire
-            status = load_and_evaluate(
-                os.path.join(app.config['MODEL_FOLDER'], modelname),
-                os.path.join(app.config['UPLOAD_FOLDER']))
+            modelpath = str(os.path.join(app.config['MODEL_FOLDER'], modelname)).replace('/', '\\')
 
-            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
-                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            if len(os.listdir(app.config['UPLOAD_FOLDER'])) > 0:
+                status = load_and_evaluate(
+                    modelpath,
+                    os.path.join(app.config['UPLOAD_FOLDER']))
 
-            return jsonify({'filename': filename, 'status': status, 'modelname': modelname})
+                if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+                return jsonify({'filename': filename, 'status': status, 'modelname': modelname})
+            return jsonify({'error': 'No file found'})
 
             # return render_template(
             #     "response.html",
