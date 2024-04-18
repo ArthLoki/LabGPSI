@@ -6,14 +6,16 @@ from moire.test_04 import load_and_evaluate
 
 import os
 
-UPLOAD_FOLDER = 'uploads/images'
+UPLOAD_FOLDER_TRAIN = 'uploads/images/train'
+UPLOAD_FOLDER_TEST = 'uploads/images/test'
 MODEL_FOLDER = 'uploads/savedmodels'
 
 ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER_TEST'] = UPLOAD_FOLDER_TEST
+app.config['UPLOAD_FOLDER_TRAIN'] = UPLOAD_FOLDER_TRAIN
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
 app.config['SECRET_KEY'] = 'super-secret'
 app.config['FLASK_ENV'] = 'development'  # Set Flask environment to development
@@ -21,11 +23,16 @@ app.debug = True  # Enable Flask debug mode
 # app.add_url_rule("/uploads/<name>", endpoint="download_file", build_only=True)
 
 ## Create folders if they don't exist
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
 if not os.path.exists(app.config['MODEL_FOLDER']):
     os.makedirs(app.config['MODEL_FOLDER'])
+
+if not os.path.exists(app.config['UPLOAD_FOLDER_TRAIN']):
+    os.makedirs(app.config['UPLOAD_FOLDER_TRAIN'])
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'positive'))
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'negative'))
+
+if not os.path.exists(app.config['UPLOAD_FOLDER_TEST']):
+    os.makedirs(app.config['UPLOAD_FOLDER_TEST'])
 
 
 ## Check if the file extension is allowed
@@ -77,21 +84,21 @@ def homepage():
 
         if file and allowed_file(file.filename, 0) and modelname is not None:
             filename = secure_filename(str(file.filename))
-            # modelname = os.listdir(app.config['MODEL_FOLDER'])[0]
+            # modelname = os.listdir(app.config['UPLOAD_FOLDER_TEST'])[0]
 
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
             # return redirect(url_for('download_file', name=filename))
 
             # chamada do moire
             modelpath = str(os.path.join(app.config['MODEL_FOLDER'], modelname)).replace('/', '\\')
 
-            if len(os.listdir(app.config['UPLOAD_FOLDER'])) > 0:
+            if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
                 status = load_and_evaluate(
                     modelpath,
-                    os.path.join(app.config['UPLOAD_FOLDER']))
+                    os.path.join(app.config['UPLOAD_FOLDER_TEST']))
 
-                if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
-                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename)):
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
 
                 return jsonify({'filename': filename, 'status': status, 'modelname': modelname})
             return jsonify({'error': 'No file found'})
@@ -106,12 +113,12 @@ def homepage():
             #     # file=url_for('download_file', name=filename)
             # )
 
-    return render_template('index.html', empty_model_folder=len(os.listdir(app.config['MODEL_FOLDER'])) == 0)
+    return render_template('index.html', empty_model_folder=len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) == 0)
 
 
 # @app.route('/uploads/<name>')
 # def download_file(name):
-#   return send_from_directory(app.config["UPLOAD_FOLDER"], name)
+#   return send_from_directory(app.config["UPLOAD_FOLDER_TEST"], name)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
