@@ -3,11 +3,20 @@ from flask import flash, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
 from moire.test_04 import load_and_evaluate
+from moire.createTrainingData import augmentAndTrasformImage
 
 import os
 
-UPLOAD_FOLDER_TRAIN = 'uploads/images/train'
-UPLOAD_FOLDER_TEST = 'uploads/images/test'
+UPLOAD_FOLDER = 'uploads/images'
+
+# UPLOAD_FOLDER_TRAIN = 'uploads/images/train'
+# UPLOAD_FOLDER_TEST = 'uploads/images/test'
+
+UPLOAD_FOLDER_TRAIN = os.path.join(UPLOAD_FOLDER, 'train')
+
+UPLOAD_FOLDER_TEST = os.path.join(UPLOAD_FOLDER, 'test')
+UPLOAD_FOLDER_TEST_PROCESSED = os.path.join(UPLOAD_FOLDER, 'test_processed')
+
 MODEL_FOLDER = 'uploads/savedmodels'
 
 ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
@@ -15,6 +24,7 @@ ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER_TEST'] = UPLOAD_FOLDER_TEST
+app.config['UPLOAD_FOLDER_TEST_PROCESSED'] = UPLOAD_FOLDER_TEST_PROCESSED
 app.config['UPLOAD_FOLDER_TRAIN'] = UPLOAD_FOLDER_TRAIN
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
 app.config['SECRET_KEY'] = 'super-secret'
@@ -33,6 +43,9 @@ if not os.path.exists(app.config['UPLOAD_FOLDER_TRAIN']):
 
 if not os.path.exists(app.config['UPLOAD_FOLDER_TEST']):
     os.makedirs(app.config['UPLOAD_FOLDER_TEST'])
+
+if not os.path.exists(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
+    os.makedirs(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
 
 
 ## Check if the file extension is allowed
@@ -93,12 +106,20 @@ def homepage():
             modelpath = str(os.path.join(app.config['MODEL_FOLDER'], modelname)).replace('/', '\\')
 
             if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
-                status = load_and_evaluate(
-                    modelpath,
-                    os.path.join(app.config['UPLOAD_FOLDER_TEST']))
+                imageTransformed = augmentAndTrasformImage(filename,
+                                                           app.config['UPLOAD_FOLDER_TEST'],
+                                                           app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
 
-                if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename)):
-                    os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
+                status = load_and_evaluate(modelpath,
+                                           os.path.join(app.config['UPLOAD_FOLDER_TEST']))
+
+                if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
+                    for filename_image in os.listdir(app.config['UPLOAD_FOLDER_TEST']):
+                        os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename_image))
+
+                if len(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])) > 0:
+                    for filename_tiff in os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
+                        os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST_PROCESSED'], filename_tiff))
 
                 return jsonify({'filename': filename, 'status': status, 'modelname': modelname})
             return jsonify({'error': 'No file found'})

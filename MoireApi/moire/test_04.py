@@ -4,7 +4,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.layers import Conv2D
 
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
@@ -22,18 +21,6 @@ def load_and_evaluate(model_path, test_dir):
     # Carrega o modelo completo
     logging.info("Carregando o modelo...")
     model = load_model(model_path)
-
-    # Adjust the number of output channels in a specific layer
-    for layer in model.layers:
-        if isinstance(layer, Conv2D):
-            # Check if the number of output channels is divisible by the number of groups
-            print(layer.name, layer.groups, layer.filters, layer.kernel_size, layer.strides)
-            if layer.filters % layer.groups != 0:
-                # Adjust the number of output channels to make it divisible
-                new_filters = layer.filters + (layer.groups - (layer.filters % layer.groups))
-                layer.filters = new_filters
-                print(f"Adjusted the number of filters in layer {layer.name} to {new_filters}")
-
     logging.info("Modelo carregado com sucesso.")
 
     test_data = []
