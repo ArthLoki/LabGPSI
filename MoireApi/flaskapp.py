@@ -12,10 +12,10 @@ UPLOAD_FOLDER = 'uploads/images'
 # UPLOAD_FOLDER_TRAIN = 'uploads/images/train'
 # UPLOAD_FOLDER_TEST = 'uploads/images/test'
 
-UPLOAD_FOLDER_TRAIN = os.path.join(UPLOAD_FOLDER, 'train')
+UPLOAD_FOLDER_TRAIN = str(os.path.join(UPLOAD_FOLDER, 'train')).replace('/', '\\')
 
-UPLOAD_FOLDER_TEST = os.path.join(UPLOAD_FOLDER, 'test')
-UPLOAD_FOLDER_TEST_PROCESSED = os.path.join(UPLOAD_FOLDER, 'test_processed')
+UPLOAD_FOLDER_TEST = str(os.path.join(UPLOAD_FOLDER, 'test')).replace('/', '\\')
+UPLOAD_FOLDER_TEST_PROCESSED = str(os.path.join(UPLOAD_FOLDER, 'test_processed')).replace('/', '\\')
 
 MODEL_FOLDER = 'uploads/savedmodels'
 
@@ -102,24 +102,26 @@ def homepage():
             file.save(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
             # return redirect(url_for('download_file', name=filename))
 
-            # chamada do moire
+            # CHAMADA MOIRE
             modelpath = str(os.path.join(app.config['MODEL_FOLDER'], modelname)).replace('/', '\\')
 
             if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
                 imageTransformed = augmentAndTrasformImage(filename,
-                                                           app.config['UPLOAD_FOLDER_TEST'],
-                                                           app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
+                                                            app.config['UPLOAD_FOLDER_TEST'],
+                                                            app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
 
-                status = load_and_evaluate(modelpath,
-                                           os.path.join(app.config['UPLOAD_FOLDER_TEST']))
+                # print(os.listdir(app.config['UPLOAD_FOLDER_TEST']))
+                # print(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED']))
 
-                if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
-                    for filename_image in os.listdir(app.config['UPLOAD_FOLDER_TEST']):
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename_image))
-
-                if len(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])) > 0:
-                    for filename_tiff in os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST_PROCESSED'], filename_tiff))
+                if imageTransformed and len(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])) > 0:
+                    status = load_and_evaluate(modelpath,
+                                                app.config['UPLOAD_FOLDER_TEST'],
+                                                app.config['UPLOAD_FOLDER_TRAIN'],
+                                                True)
+                    clear_folders()
+                else:
+                    clear_folders()
+                    return jsonify({'error': 'image augment and transformation failed or folder test_processed is empty'})
 
                 return jsonify({'filename': filename, 'status': status, 'modelname': modelname})
             return jsonify({'error': 'No file found'})
@@ -135,6 +137,17 @@ def homepage():
             # )
 
     return render_template('index.html', empty_model_folder=len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) == 0)
+
+
+def clear_folders():
+    if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
+        for filename_image in os.listdir(app.config['UPLOAD_FOLDER_TEST']):
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename_image))
+
+    if len(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])) > 0:
+        for filename_tiff in os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER_TEST_PROCESSED'], filename_tiff))
+    return
 
 
 # @app.route('/uploads/<name>')

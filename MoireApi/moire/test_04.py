@@ -5,6 +5,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
 import logging
@@ -15,7 +16,7 @@ WIDTH = 750
 HEIGHT = 1000
 
 
-def load_and_evaluate(model_path, test_dir):
+def load_and_evaluate(model_path, test_dir, spe_default=False):
     logging.basicConfig(level=logging.INFO)
 
     # Carrega o modelo completo
@@ -27,23 +28,39 @@ def load_and_evaluate(model_path, test_dir):
     for e in os.listdir(test_dir):
         img = cv2.imread(os.path.join(test_dir, e))
         test_data.append(img)
+    print(test_data)
 
     test_data = np.array(test_data, dtype="float") / 255.0
 
     # Prepara o gerador de dados de teste, agora para imagens em escala de cinza
-    test_datagen = ImageDataGenerator()
+    # test_datagen = ImageDataGenerator(rescale=1. / 255)
+    # test_generator = test_datagen.flow_from_directory(
+    #     test_dir,
+    #     target_size=(HEIGHT, WIDTH),
+    #     batch_size=32,
+    #     class_mode='binary',
+    #     color_mode='grayscale',  # Modificado para escala de cinza
+    #     shuffle=False  # Não misturar os dados para correspondência de previsões
+    # )
 
-    test_generator = test_datagen.flow(test_data, batch_size=1)
+    # print(test_generator.samples, test_generator.classes, test_generator.class_indices)
+    #
+    # # Calcula o número correto de passos por época
+    # if not spe_default:
+    #     steps_per_epoch = np.ceil(test_generator.samples / test_generator.batch_size)
+    # else:
+    #     steps_per_epoch = 10
 
     # Avalia o modelo usando o conjunto de dados de teste
     logging.info("Avaliando o modelo...")
-    results = model.evaluate(test_generator)
+    results = model.evaluate(test_data, ["Positive", 'Negative'])
+    print(results)
     logging.info(f"Loss: {results[0]}, Accuracy: {results[1]}")
 
     # Faz previsões sobre todo o conjunto de teste
     logging.info("Gerando previsões para o conjunto de teste...")
-    test_generator.reset()
-    predictions = model.predict(test_generator, batch_size=32)
+    test_data = []
+    predictions = model.predict(test_data)
     # Reduz as previsões a 1D para binário
     predictions = np.round(predictions).astype(int).flatten()
 
