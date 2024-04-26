@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 from tensorflow.keras.models import load_model
 import logging
@@ -22,6 +21,7 @@ def load_and_evaluate(model_path, test_dir):
         return {'Error': f'Error loading {model_path.split("/")[-1]} in test_moire_api.py:\n{e}'}
 
     results = []
+    results_pred = []
     for i in range(TRANSFORM_COUNT):
         img_path = os.path.join(test_dir, os.listdir(test_dir)[i])
 
@@ -47,18 +47,15 @@ def load_and_evaluate(model_path, test_dir):
                 'Error': f'Error generating predictions for {model_path.split("/")[-1]} in test_moire_api.py: {e}'}
 
         results.append(True if predictions[0][0] > 0.5 else False)
+        results_pred.append(predictions[0][0])
 
     count_moire = results.count(True)
-    if count_moire < len(results)//2:
+    if count_moire == 0:
         is_moire = False
     else:
         is_moire = True
 
     return {
-        # "loss": results[0],
-        # "accuracy": results[1],
-        # 'confusion_matrix': cm,
-        # 'classification_report': class_report
-        # 'prediction': predictions[0],
+        'predictions': results_pred,
         'moire': is_moire
     }

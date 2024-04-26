@@ -118,10 +118,14 @@ def homepage():
                     clear_test_folders()
                     return jsonify({'Error': 'image augment and transformation failed or folder test_processed is empty'})
 
-                return jsonify({'filename': filename,
+                return jsonify({
+                                'filename': filename,
                                 'moire': status.get('moire'),
                                 'model_name': model_name,
-                                'datetime': datetime.now()})
+                                'datetime': datetime.now(),
+                                # 'predictions': status.get('predictions')
+                                }
+                               )
 
                 # return render_template(
                 #     "response.html",
