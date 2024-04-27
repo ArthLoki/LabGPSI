@@ -16,14 +16,25 @@ UPLOAD_FOLDER_TEST_PROCESSED = str(os.path.join(UPLOAD_FOLDER, 'test_processed')
 
 MODEL_FOLDER = 'uploads/savedmodels'
 
+REPORT_FOLDER = 'report'
+REPORT_FOLDER_BY_IMAGE = str(os.path.join(REPORT_FOLDER, 'by_image')).replace('\\', '/')
+REPORT_FOLDER_BY_CHANNEL = str(os.path.join(REPORT_FOLDER, 'by_channel')).replace('\\', '/')
+
 ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
 
 app = Flask(__name__)
+
 app.config['UPLOAD_FOLDER_TEST'] = UPLOAD_FOLDER_TEST
 app.config['UPLOAD_FOLDER_TEST_PROCESSED'] = UPLOAD_FOLDER_TEST_PROCESSED
 app.config['UPLOAD_FOLDER_TRAIN'] = UPLOAD_FOLDER_TRAIN
+
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
+
+app.config['REPORT_FOLDER'] = REPORT_FOLDER
+app.config['REPORT_FOLDER_BY_IMAGE'] = REPORT_FOLDER_BY_IMAGE
+app.config['REPORT_FOLDER_BY_CHANNEL'] = REPORT_FOLDER_BY_CHANNEL
+
 app.config['SECRET_KEY'] = 'super-secret'
 app.config['FLASK_ENV'] = 'development'  # Set Flask environment to development
 app.debug = app.config['FLASK_ENV'] == 'development' # Enable Flask debug mode
@@ -33,16 +44,25 @@ app.debug = app.config['FLASK_ENV'] == 'development' # Enable Flask debug mode
 if not os.path.exists(app.config['MODEL_FOLDER']):
     os.makedirs(app.config['MODEL_FOLDER'])
 
-if not os.path.exists(app.config['UPLOAD_FOLDER_TRAIN']):
-    os.makedirs(app.config['UPLOAD_FOLDER_TRAIN'])
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'positive'))
-    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'negative'))
+# if not os.path.exists(app.config['UPLOAD_FOLDER_TRAIN']):
+#     os.makedirs(app.config['UPLOAD_FOLDER_TRAIN'])
+#     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'positive'))
+#     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER_TRAIN'], 'negative'))
 
 if not os.path.exists(app.config['UPLOAD_FOLDER_TEST']):
     os.makedirs(app.config['UPLOAD_FOLDER_TEST'])
 
 if not os.path.exists(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
     os.makedirs(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
+
+if not os.path.exists(app.config['REPORT_FOLDER']):
+    os.makedirs(app.config['REPORT_FOLDER'])
+
+if not os.path.exists(app.config['REPORT_FOLDER_BY_IMAGE']):
+    os.makedirs(app.config['REPORT_FOLDER_BY_IMAGE'])
+
+if not os.path.exists(app.config['REPORT_FOLDER_BY_CHANNEL']):
+    os.makedirs(app.config['REPORT_FOLDER_BY_CHANNEL'])
 
 
 ## Check if the file extension is allowed
@@ -79,20 +99,15 @@ def homepage():
         # CHECK IMAGE FILE
         # check if the post request has the file part
         if 'file' not in request.files:
-            # flash('No file part')
-            # return redirect(request.url)
             return jsonify({'Error': 'No file part'})
 
         file = request.files['file']
 
         if file.filename == '':
-            # flash('No selected file')
-            # return redirect(request.url)
-            return jsonify({'error': 'No selected file'})
+            return jsonify({'Error': 'No selected file'})
 
         if file and allowed_file(file.filename, 0) and model_name is not None:
             filename = secure_filename(str(file.filename))
-            # model_name = os.listdir(app.config['UPLOAD_FOLDER_TEST'])[0]
 
             file.save(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
             # return redirect(url_for('download_file', name=filename))
@@ -109,31 +124,38 @@ def homepage():
                     status = load_and_evaluate(model_path,
                                                 app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
 
-                    clear_test_folders()
-
+                    # Check if status returned an error
                     if status.get('Error') is not None:
                         clear_test_folders()
                         return jsonify(status)
+
+                    # Get results from predictions to create statistics
+                    results_predictions = status.get('results_predictions')
+
+                    # Returns an error json if there's no 'results_predictions' in status
+                    if results_predictions is None:
+                        clear_test_folders()
+                        return jsonify({'Error': 'results_predictions is None'})
+
+                    generateReportByImage(filename, results_predictions)
+                    generateReportByChannel(filename, results_predictions)
+
+                    # Clear folders after use images
+                    clear_test_folders()
                 else:
                     clear_test_folders()
                     return jsonify({'Error': 'image augment and transformation failed or folder test_processed is empty'})
 
-                return jsonify({
+                return jsonify ({
                                 'filename': filename,
                                 'moire': status.get('moire'),
                                 'model_name': model_name,
-                                'datetime': datetime.now(),
-                                # 'predictions': status.get('predictions')
-                                }
-                               )
+                                'datetime': datetime.now()
+                                })
 
                 # return render_template(
                 #     "response.html",
                 #     filename=filename.upper(),
-                #     loss=status.get('loss'),
-                #     accuracy=status.get('accuracy'),
-                #     cm=status.get('confusion_matrix'),
-                #     cr=status.get('classification_report'),
                 #     file=url_for('download_file', name=filename)
                 # )
             return jsonify({'Error': 'No file found'})
@@ -155,6 +177,57 @@ def clear_model_folder():
     if len(os.listdir(app.config['MODEL_FOLDER'])) > 0:
         for model_name in os.listdir(app.config['MODEL_FOLDER']):
             os.remove(os.path.join(app.config['MODEL_FOLDER'], model_name))
+    return
+
+def generateReportByImage(image_name, results_predictions):
+    """
+    Structure of the report_<image_name>.txt file
+
+    <image_name>:
+
+    channel 1 (<channel_name>): status.get('results_predictions')[0]
+    .
+    .
+    .
+    channel 12 (<channel_name>): status.get('results_predictions')[11]
+    """
+    filename = 'report_'+image_name.split('.')[0]+'.txt'
+    file = open(os.path.join(app.config['REPORT_FOLDER_BY_IMAGE'], filename), 'w')
+
+    if filename in os.listdir(app.config['REPORT_FOLDER_BY_IMAGE']):
+        # file.write(f'{upper(image_name)}:\n')
+        for i, channel in enumerate(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])):
+            file.write(f'Channel {i+1} ({channel}): {results_predictions[i]}\n')
+    return
+
+
+def generateReportByChannel(image_name, results_predictions):
+    """
+    Structure of the report_channel_<i+1>.txt file
+
+    Channel <i+1>:
+    <image_name_1> (<channel_name_1>): status.get('results_predictions')[0]
+    <image_name_2> (<channel_name_2>): status.get('results_predictions')[1]
+    .
+    .
+    .
+    <image_name_<i+1>> (<channel_name_<i+1>>): status.get('results_predictions')[i]
+    """
+
+    channels_name = os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
+    for i, channel in enumerate(channels_name):
+        filename = f'report_channel_{i+1}.txt'
+        if filename in os.listdir(app.config['REPORT_FOLDER_BY_CHANNEL']):
+            print(f"Updating channel {i + 1} report file.\nProgress: {i + 1} of {len(channels_name)}")
+            file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'a')
+            file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
+            print(f"Channel {i + 1} report file updated.\n")
+        else:
+            print(f"Creating channel {i+1} report file.\nProgress: {i+1} of {len(channels_name)}")
+            file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'w')
+            # file.write(f'Channel {i+1}:\n')
+            file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
+            print(f"Channel {i + 1} report file created.\n")
     return
 
 

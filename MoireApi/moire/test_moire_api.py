@@ -46,8 +46,19 @@ def load_and_evaluate(model_path, test_dir):
             return {
                 'Error': f'Error generating predictions for {model_path.split("/")[-1]} in test_moire_api.py: {e}'}
 
+        # if i not in [4, 8, 12]:
+        #     if predictions[0][0] >= 0.03:
+        #         moire_prediction = True
+        #     else:
+        #         moire_prediction = False
+        # else:
+        #     moire_prediction = False
+
+        # results.append(moire_prediction)
+        # results_pred.append({'prediction': predictions[0][0], 'moire': moire_prediction})
+
         results.append(True if predictions[0][0] > 0.5 else False)
-        results_pred.append(predictions[0][0])
+        results_pred.append({'prediction': predictions[0][0], 'moire': True if predictions[0][0] > 0.5 else False})
 
     count_moire = results.count(True)
     if count_moire == 0:
@@ -56,6 +67,6 @@ def load_and_evaluate(model_path, test_dir):
         is_moire = True
 
     return {
-        'predictions': results_pred,
+        'results_predictions': results_pred,
         'moire': is_moire
     }
