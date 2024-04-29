@@ -19,6 +19,7 @@ MODEL_FOLDER = 'uploads/savedmodels'
 REPORT_FOLDER = 'report'
 REPORT_FOLDER_BY_IMAGE = str(os.path.join(REPORT_FOLDER, 'by_image')).replace('\\', '/')
 REPORT_FOLDER_BY_CHANNEL = str(os.path.join(REPORT_FOLDER, 'by_channel')).replace('\\', '/')
+REPORT_FOLDER_CM = str(os.path.join(REPORT_FOLDER, 'confusion_matrix')).replace('\\', '/')
 
 ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
 ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
@@ -34,6 +35,7 @@ app.config['MODEL_FOLDER'] = MODEL_FOLDER
 app.config['REPORT_FOLDER'] = REPORT_FOLDER
 app.config['REPORT_FOLDER_BY_IMAGE'] = REPORT_FOLDER_BY_IMAGE
 app.config['REPORT_FOLDER_BY_CHANNEL'] = REPORT_FOLDER_BY_CHANNEL
+app.config['REPORT_FOLDER_CM'] = REPORT_FOLDER_CM
 
 app.config['SECRET_KEY'] = 'super-secret'
 app.config['FLASK_ENV'] = 'development'  # Set Flask environment to development
@@ -63,6 +65,9 @@ if not os.path.exists(app.config['REPORT_FOLDER_BY_IMAGE']):
 
 if not os.path.exists(app.config['REPORT_FOLDER_BY_CHANNEL']):
     os.makedirs(app.config['REPORT_FOLDER_BY_CHANNEL'])
+
+if not os.path.exists(app.config['REPORT_FOLDER_CM']):
+    os.makedirs(app.config['REPORT_FOLDER_CM'])
 
 
 ## Check if the file extension is allowed
@@ -137,8 +142,17 @@ def homepage():
                         clear_test_folders()
                         return jsonify({'Error': 'results_predictions is None'})
 
+                    # Get results from confusion matrix to create statistics
+                    results_cm = status.get('results_cm')
+
+                    # Returns an error json if there's no 'results_cm' in status
+                    if results_cm is None:
+                        clear_test_folders()
+                        return jsonify({'Error': 'results_cm is None'})
+
                     generateReportByImage(filename, results_predictions)
                     generateReportByChannel(filename, results_predictions)
+                    generateReportCM(filename, results_cm)
 
                     # Clear folders after use images
                     clear_test_folders()
@@ -150,7 +164,7 @@ def homepage():
                                 'filename': filename,
                                 'moire': status.get('moire'),
                                 'model_name': model_name,
-                                'datetime': datetime.now()
+                                'datetime': datetime.now(),
                                 })
 
                 # return render_template(
@@ -220,14 +234,41 @@ def generateReportByChannel(image_name, results_predictions):
         if filename in os.listdir(app.config['REPORT_FOLDER_BY_CHANNEL']):
             print(f"Updating channel {i + 1} report file.\nProgress: {i + 1} of {len(channels_name)}")
             file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'a')
+
+            # Write images predictions data
             file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
             print(f"Channel {i + 1} report file updated.\n")
         else:
             print(f"Creating channel {i+1} report file.\nProgress: {i+1} of {len(channels_name)}")
             file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'w')
-            # file.write(f'Channel {i+1}:\n')
+
+            # Write images predictions data
             file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
             print(f"Channel {i + 1} report file created.\n")
+    return
+
+
+def generateReportCM(image_name, results_cm):
+    """
+    Structure of the report_<image_name>_cm.txt file
+
+    Confusion Matrix Data:
+        True Positives: <TP>
+        True Negatives: <TN>
+        False Positives: <FP>
+        False Negatives: <FN>
+        Accuracy: <accuracy>
+        Precision: <precision>
+        Recall: <recall>
+        F1 Score: <f1score>
+    """
+    filename = 'report_' + image_name.split('.')[0] + '_cm.txt'
+    file = open(os.path.join(app.config['REPORT_FOLDER_CM'], filename), 'w')
+
+    if filename in os.listdir(app.config['REPORT_FOLDER_CM']):
+        file.write('\nConfusion Matrix Data:\n')
+        for _, content in enumerate(results_cm.items()):
+            file.write(f'\t{content[0]}: {content[1]}\n')
     return
 
 
