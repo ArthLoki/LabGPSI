@@ -8,7 +8,6 @@ from datetime import datetime
 
 UPLOAD_FOLDER = 'uploads/images'
 
-UPLOAD_FOLDER_TRAIN = str(os.path.join(UPLOAD_FOLDER, 'train')).replace('\\', '/')
 UPLOAD_FOLDER_TEST = str(os.path.join(UPLOAD_FOLDER, 'test')).replace('\\', '/')
 UPLOAD_FOLDER_TEST_PROCESSED = str(os.path.join(UPLOAD_FOLDER, 'test_processed')).replace('\\', '/')
 
@@ -26,7 +25,6 @@ app = Flask(__name__)
 
 app.config['UPLOAD_FOLDER_TEST'] = UPLOAD_FOLDER_TEST
 app.config['UPLOAD_FOLDER_TEST_PROCESSED'] = UPLOAD_FOLDER_TEST_PROCESSED
-app.config['UPLOAD_FOLDER_TRAIN'] = UPLOAD_FOLDER_TRAIN
 
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
 
