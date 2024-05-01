@@ -54,7 +54,7 @@ def load_and_evaluate(model_path, test_dir):
         results_pred.append({'prediction': predictions[0][0]})
 
         # Append ground truth and predicted labels
-        y_true.append(1 if predictions[0][0] > 0.5 else 0)  # Assuming all images contain moiré patterns for simplicity
+        y_true.append(1 if predictions[0][0] > 0.5 else 0)
         y_pred.append(1 if predictions[0][0] > 0.5 else 0)
 
     # Compute confusion matrix
@@ -66,31 +66,18 @@ def load_and_evaluate(model_path, test_dir):
     '''
     confusion_mat = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
-    print('\n\nCONFUSION MATRIX:')
-    print(confusion_mat)
-
     # Check Confusion Matrix data
     TN = confusion_mat[0, 0]
     FP = confusion_mat[0, 1]
     FN = confusion_mat[1, 0]
     TP = confusion_mat[1, 1]
 
-    print('\n\n')
-    print("True Positives (TP): ", TP)
-    print("True Negatives (TN): ", TN)
-    print("False Positives (FP): ", FP)
-    print("False Negatives (FN): ", FN)
-
     accuracy = (TP + TN) / (TP + TN + FP + FN) if TP + TN + FP + FN > 0 else (TP + TN)/TRANSFORM_COUNT
     precision = TP / (TP + FP) if TP + FP > 0 else TP
     recall = TP / (TP + FN) if TP + FN > 0 else TP
     f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 2 * (precision * recall)
 
-    print("Accuracy: ", accuracy)
-    print("Precision: ", precision)
-    print("Recall (Sensitivity): ", recall)
-    print("F1 Score: ", f1score)
-    print('\n\n')
+    printCMData(confusion_mat, TP, TN, FP, FN, accuracy, precision, recall, f1score)
 
     if TN + FP + FN + TP == TRANSFORM_COUNT:
         # is_moire = 'under analysis'
@@ -126,3 +113,19 @@ def load_and_evaluate(model_path, test_dir):
         'results_cm': results_cm,
         'moire': is_moire,
     }
+
+
+def printCMData(confusion_mat, TP, TN, FP, FN, accuracy, precision, recall, f1score):
+    print('\n\nCONFUSION MATRIX:')
+    print(confusion_mat)
+    print('\n\n')
+    print("True Positives (TP): ", TP)
+    print("True Negatives (TN): ", TN)
+    print("False Positives (FP): ", FP)
+    print("False Negatives (FN): ", FN)
+    print("Accuracy: ", accuracy)
+    print("Precision: ", precision)
+    print("Recall (Sensitivity): ", recall)
+    print("F1 Score: ", f1score)
+    print('\n\n')
+    return

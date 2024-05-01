@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 
-from moire.moire_detection import load_and_evaluate
+from moire.test_moire_api import load_and_evaluate
+from moire.createTrainingData import augmentAndTrasformImage
 
 import os
 from datetime import datetime
@@ -112,36 +113,44 @@ def homepage():
             model_path = str(os.path.join(app.config['MODEL_FOLDER'], model_name)).replace('\\', '/')
 
             if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
-                status = load_and_evaluate(model_path,
-                                                app.config['UPLOAD_FOLDER_TEST'])
+                imageTransformed = augmentAndTrasformImage(filename,
+                                                            app.config['UPLOAD_FOLDER_TEST'],
+                                                            app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
 
-                # Check if status returned an error
-                if status.get('Error') is not None:
+                if imageTransformed and len(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])) > 0:
+                    status = load_and_evaluate(model_path,
+                                                app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
+
+                    # Check if status returned an error
+                    if status.get('Error') is not None:
+                        clear_test_folders()
+                        return jsonify(status)
+
+                    # Get results from predictions to create statistics
+                    results_predictions = status.get('results_predictions')
+
+                    # Returns an error json if there's no 'results_predictions' in status
+                    if results_predictions is None:
+                        clear_test_folders()
+                        return jsonify({'Error': 'results_predictions is None'})
+
+                    # Get results from confusion matrix to create statistics
+                    results_cm = status.get('results_cm')
+
+                    # Returns an error json if there's no 'results_cm' in status
+                    if results_cm is None:
+                        clear_test_folders()
+                        return jsonify({'Error': 'results_cm is None'})
+
+                    generateReportByImage(filename, results_predictions)
+                    generateReportByChannel(filename, results_predictions)
+                    generateReportCM(filename, results_cm)
+
+                    # Clear folders after use images
                     clear_test_folders()
-                    return jsonify(status)
-
-                # Get results from predictions to create statistics
-                results_predictions = status.get('results_predictions')
-
-                # Returns a json error if there's no 'results_predictions' in status
-                if results_predictions is None:
+                else:
                     clear_test_folders()
-                    return jsonify({'Error': 'results_predictions is None'})
-
-                # Get results from confusion matrix to create statistics
-                results_cm = status.get('results_cm')
-
-                # Returns a json error if there's no 'results_cm' in status
-                if results_cm is None:
-                    clear_test_folders()
-                    return jsonify({'Error': 'results_cm is None'})
-
-                # generateReportByImage(filename, results_predictions)
-                # generateReportByChannel(filename, results_predictions)
-                generateReportCM(filename, results_cm)
-
-                # Clear folders after use images
-                clear_test_folders()
+                    return jsonify({'Error': 'image augment and transformation failed or folder test_processed is empty'})
 
                 return jsonify ({
                                 'filename': filename,
@@ -245,7 +254,7 @@ def generateReportCM(image_name, results_cm):
     if filename in os.listdir(app.config['REPORT_FOLDER_CM']):
         # file.write('\nConfusion Matrix Data:\n')
         for _, content in enumerate(results_cm.items()):
-            file.write(f'{content[0]}: {content[1]}\n')
+            file.write(f'\t{content[0]}: {content[1]}\n')
     return
 
 
