@@ -118,14 +118,6 @@ def homepage():
                     clear_test_folders()
                     return jsonify(status)
 
-                # Get results from predictions to create statistics
-                results_predictions = status.get('results_predictions')
-
-                # Returns a json error if there's no 'results_predictions' in status
-                if results_predictions is None:
-                    clear_test_folders()
-                    return jsonify({'Error': 'results_predictions is None'})
-
                 # Get results from confusion matrix to create statistics
                 results_cm = status.get('results_cm')
 
@@ -134,8 +126,6 @@ def homepage():
                     clear_test_folders()
                     return jsonify({'Error': 'results_cm is None'})
 
-                # generateReportByImage(filename, results_predictions)
-                # generateReportByChannel(filename, results_predictions)
                 generateReportCM(filename, results_cm)
 
                 # Clear folders after use images
@@ -167,61 +157,6 @@ def clear_model_folder():
         for model_name in os.listdir(app.config['MODEL_FOLDER']):
             os.remove(os.path.join(app.config['MODEL_FOLDER'], model_name))
     return
-
-def generateReportByImage(image_name, results_predictions):
-    """
-    Structure of the report_<image_name>.txt file
-
-    <image_name>:
-
-    channel 1 (<channel_name>): status.get('results_predictions')[0]
-    .
-    .
-    .
-    channel 12 (<channel_name>): status.get('results_predictions')[11]
-    """
-    filename = 'report_'+image_name.split('.')[0]+'.txt'
-    file = open(os.path.join(app.config['REPORT_FOLDER_BY_IMAGE'], filename), 'w')
-
-    if filename in os.listdir(app.config['REPORT_FOLDER_BY_IMAGE']):
-        # file.write(f'{upper(image_name)}:\n')
-        for i, channel in enumerate(os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])):
-            file.write(f'Channel {i+1} ({channel}): {results_predictions[i]}\n')
-    return
-
-
-def generateReportByChannel(image_name, results_predictions):
-    """
-    Structure of the report_channel_<i+1>.txt file
-
-    Channel <i+1>:
-    <image_name_1> (<channel_name_1>): status.get('results_predictions')[0]
-    <image_name_2> (<channel_name_2>): status.get('results_predictions')[1]
-    .
-    .
-    .
-    <image_name_<i+1>> (<channel_name_<i+1>>): status.get('results_predictions')[i]
-    """
-
-    channels_name = os.listdir(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
-    for i, channel in enumerate(channels_name):
-        filename = f'report_channel_{i+1}.txt'
-        if filename in os.listdir(app.config['REPORT_FOLDER_BY_CHANNEL']):
-            print(f"Updating channel {i + 1} report file.\nProgress: {i + 1} of {len(channels_name)}")
-            file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'a')
-
-            # Write images predictions data
-            file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
-            print(f"Channel {i + 1} report file updated.\n")
-        else:
-            print(f"Creating channel {i+1} report file.\nProgress: {i+1} of {len(channels_name)}")
-            file = open(os.path.join(app.config['REPORT_FOLDER_BY_CHANNEL'], filename), 'w')
-
-            # Write images predictions data
-            file.write(f'{image_name} ({channels_name[i]}): {results_predictions[i]}\n')
-            print(f"Channel {i + 1} report file created.\n")
-    return
-
 
 def generateReportCM(image_name, results_cm):
     """

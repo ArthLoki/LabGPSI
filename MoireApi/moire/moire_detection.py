@@ -69,7 +69,6 @@ def classify_image(model, image_path):
         results = {}
 
         # Classifica cada componente
-        results_pred = []   # Results from prediction
         y_true = []         # Ground truth labels
         y_pred = []         # Predicted labels
         for suffix, component in zip(suffixes, components):
@@ -86,7 +85,7 @@ def classify_image(model, image_path):
         print('results: ', results)
         results_cm = getCM(y_true, y_pred, len(suffixes))
 
-        return {'results': results, 'results_predictions': results_pred, 'results_cm': results_cm}
+        return {'results': results, 'results_cm': results_cm}
     except Exception as e:
         return {'Error': 'classify_image error: ' + str(e)}
 
@@ -98,7 +97,7 @@ def load_and_evaluate(model_path, test_dir):
         # Classifica a imagem
         dict_results = classify_image(model, os.path.join(test_dir, os.listdir(test_dir)[0]))
 
-        results, results_pred, results_cm = dict_results.get('results'), dict_results.get('results_predictions'), dict_results.get('results_cm')
+        results, results_cm = dict_results.get('results'), dict_results.get('results_cm')
 
         if results is None:
             return {'Error': 'load_and_evaluate: results cannot be None'}
@@ -117,8 +116,6 @@ def load_and_evaluate(model_path, test_dir):
             print(f"Canais com detecção de moiré: {', '.join(channels_with_moire)}")
 
         return {
-            'results': results,
-            'results_predictions': results_pred,
             'results_cm': results_cm,
             'moire': has_moire,
         }
