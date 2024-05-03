@@ -1,11 +1,10 @@
 import os
-import sys
 import numpy as np
 from PIL import Image
-import argparse
 from keras.models import load_model
 import moire.haar2D as haar2D  # Importa o módulo com a função de transformada de Haar
 from sklearn.metrics import confusion_matrix
+
 
 def normalize_and_resize(component, model_input_shape):
     try:
@@ -16,13 +15,13 @@ def normalize_and_resize(component, model_input_shape):
     except Exception as e:
         return {'Error': 'normalize_and_resize error: ' + str(e)}
 
-def getCM(y_true, y_pred, count_channels):
 
+def getCM(y_true, y_pred, count_channels):
     try:
         # Compute confusion matrix
         '''
         Confusion Matrix:
-    
+
         [[true negative, false positive],
         [false negative, true positive]]
         '''
@@ -38,7 +37,8 @@ def getCM(y_true, y_pred, count_channels):
         accuracy = (TP + TN) / (TP + TN + FP + FN) if TP + TN + FP + FN > 0 else (TP + TN) / count_channels
         precision = TP / (TP + FP) if TP + FP > 0 else TP
         recall = TP / (TP + FN) if TP + FN > 0 else TP
-        f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 2 * (precision * recall)
+        f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 2 * (
+                    precision * recall)
 
         results_cm = {
             # 'Confusion Matrix': confusion_mat,
@@ -48,13 +48,14 @@ def getCM(y_true, y_pred, count_channels):
             "False Negatives": FN,
             "Accuracy": accuracy,
             'Precision': precision,
-            'Recall': recall,
+            'Recall (Sensitivity)': recall,
             'F1 Score': f1score,
         }
 
         return results_cm
     except Exception as e:
         return {'Error': 'getCM error: ' + str(e)}
+
 
 def classify_image(model, image_path):
     try:
@@ -69,14 +70,12 @@ def classify_image(model, image_path):
         results = {}
 
         # Classifica cada componente
-        y_true = []         # Ground truth labels
-        y_pred = []         # Predicted labels
+        y_true = []  # Ground truth labels
+        y_pred = []  # Predicted labels
         for suffix, component in zip(suffixes, components):
             component_ready = normalize_and_resize(component, model.input_shape[1:3])
             prediction = model.predict(component_ready)
             results[suffix] = prediction[0][0] > 0.5  # Assume saída binária
-
-            results_pred.append({'prediction': prediction[0][0]})
 
             # Append ground truth and predicted labels
             y_true.append(1)
@@ -89,21 +88,37 @@ def classify_image(model, image_path):
     except Exception as e:
         return {'Error': 'classify_image error: ' + str(e)}
 
-def load_and_evaluate(model_path, test_dir):
+
+def count_boolean_channels(results):
+    # Create counter variable
+    channels_boolean_counter = {
+        "LL": {True: 0, False: 0},
+        "LH": {True: 0, False: 0},
+        "HL": {True: 0, False: 0},
+        "HH": {True: 0, False: 0},
+    }
+
+    # Increment counter variable
+    for key, value in results.items():
+        channels_boolean_counter[key][value] += 1
+
+    return channels_boolean_counter
+
+
+def load_and_evaluate(model_path, test_dir, image_name):
     try:
         # Carrega o modelo
         model = load_model(model_path)
 
         # Classifica a imagem
-        dict_results = classify_image(model, os.path.join(test_dir, os.listdir(test_dir)[0]))
+        dict_results = classify_image(model, os.path.join(test_dir, image_name))
 
         results, results_cm = dict_results.get('results'), dict_results.get('results_cm')
 
         if results is None:
             return {'Error': 'load_and_evaluate: results cannot be None'}
 
-        if results_pred is None:
-            return {'Error': 'load_and_evaluate: results_pred cannot be None'}
+        channels_boolean_counter = count_boolean_channels(results)
 
         if results_cm is None:
             return {'Error': 'load_and_evaluate: results_cm cannot be None'}
@@ -116,6 +131,7 @@ def load_and_evaluate(model_path, test_dir):
             print(f"Canais com detecção de moiré: {', '.join(channels_with_moire)}")
 
         return {
+            'results_channels': channels_boolean_counter,
             'results_cm': results_cm,
             'moire': has_moire,
         }

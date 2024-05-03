@@ -1,37 +1,21 @@
 from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 
-from moire.moire_detection import load_and_evaluate
+from moire.moire_detection_api import load_and_evaluate
 
 import os
 from datetime import datetime
 
-UPLOAD_FOLDER = 'uploads/images'
-
-UPLOAD_FOLDER_TEST = str(os.path.join(UPLOAD_FOLDER, 'test')).replace('\\', '/')
-UPLOAD_FOLDER_TEST_PROCESSED = str(os.path.join(UPLOAD_FOLDER, 'test_processed')).replace('\\', '/')
-
+UPLOAD_FOLDER_TEST = 'uploads/images/test'
 MODEL_FOLDER = 'uploads/savedmodels'
 
-REPORT_FOLDER = 'report'
-REPORT_FOLDER_BY_IMAGE = str(os.path.join(REPORT_FOLDER, 'by_image')).replace('\\', '/')
-REPORT_FOLDER_BY_CHANNEL = str(os.path.join(REPORT_FOLDER, 'by_channel')).replace('\\', '/')
-REPORT_FOLDER_CM = str(os.path.join(REPORT_FOLDER, 'confusion_matrix')).replace('\\', '/')
-
-ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg'}
+ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg', 'JPG'}
 ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
 
 app = Flask(__name__)
 
 app.config['UPLOAD_FOLDER_TEST'] = UPLOAD_FOLDER_TEST
-app.config['UPLOAD_FOLDER_TEST_PROCESSED'] = UPLOAD_FOLDER_TEST_PROCESSED
-
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
-
-app.config['REPORT_FOLDER'] = REPORT_FOLDER
-app.config['REPORT_FOLDER_BY_IMAGE'] = REPORT_FOLDER_BY_IMAGE
-app.config['REPORT_FOLDER_BY_CHANNEL'] = REPORT_FOLDER_BY_CHANNEL
-app.config['REPORT_FOLDER_CM'] = REPORT_FOLDER_CM
 
 app.config['SECRET_KEY'] = 'super-secret'
 app.config['FLASK_ENV'] = 'development'  # Set Flask environment to development
@@ -43,21 +27,6 @@ if not os.path.exists(app.config['MODEL_FOLDER']):
 
 if not os.path.exists(app.config['UPLOAD_FOLDER_TEST']):
     os.makedirs(app.config['UPLOAD_FOLDER_TEST'])
-
-if not os.path.exists(app.config['UPLOAD_FOLDER_TEST_PROCESSED']):
-    os.makedirs(app.config['UPLOAD_FOLDER_TEST_PROCESSED'])
-
-if not os.path.exists(app.config['REPORT_FOLDER']):
-    os.makedirs(app.config['REPORT_FOLDER'])
-
-if not os.path.exists(app.config['REPORT_FOLDER_BY_IMAGE']):
-    os.makedirs(app.config['REPORT_FOLDER_BY_IMAGE'])
-
-if not os.path.exists(app.config['REPORT_FOLDER_BY_CHANNEL']):
-    os.makedirs(app.config['REPORT_FOLDER_BY_CHANNEL'])
-
-if not os.path.exists(app.config['REPORT_FOLDER_CM']):
-    os.makedirs(app.config['REPORT_FOLDER_CM'])
 
 
 ## Check if the file extension is allowed
@@ -103,7 +72,6 @@ def homepage():
 
         if file and allowed_file(file.filename, 0) and model_name is not None:
             filename = secure_filename(str(file.filename))
-
             file.save(os.path.join(app.config['UPLOAD_FOLDER_TEST'], filename))
 
             # CHAMADA MOIRE
@@ -118,16 +86,6 @@ def homepage():
                     clear_test_folders()
                     return jsonify(status)
 
-                # Get results from confusion matrix to create statistics
-                results_cm = status.get('results_cm')
-
-                # Returns a json error if there's no 'results_cm' in status
-                if results_cm is None:
-                    clear_test_folders()
-                    return jsonify({'Error': 'results_cm is None'})
-
-                generateReportCM(filename, results_cm)
-
                 # Clear folders after use images
                 clear_test_folders()
 
@@ -140,7 +98,6 @@ def homepage():
             return jsonify({'Error': 'No file found'})
 
     return render_template('index.html', empty_model_folder=len(os.listdir(app.config['MODEL_FOLDER'])) == 0)
-
 
 def clear_test_folders():
     if len(os.listdir(app.config['UPLOAD_FOLDER_TEST'])) > 0:
@@ -157,30 +114,6 @@ def clear_model_folder():
         for model_name in os.listdir(app.config['MODEL_FOLDER']):
             os.remove(os.path.join(app.config['MODEL_FOLDER'], model_name))
     return
-
-def generateReportCM(image_name, results_cm):
-    """
-    Structure of the report_<image_name>_cm.txt file
-
-    Confusion Matrix Data:
-        True Positives: <TP>
-        True Negatives: <TN>
-        False Positives: <FP>
-        False Negatives: <FN>
-        Accuracy: <accuracy>
-        Precision: <precision>
-        Recall: <recall>
-        F1 Score: <f1score>
-    """
-    filename = 'report_' + image_name.split('.')[0] + '_cm.txt'
-    file = open(os.path.join(app.config['REPORT_FOLDER_CM'], filename), 'w')
-
-    if filename in os.listdir(app.config['REPORT_FOLDER_CM']):
-        # file.write('\nConfusion Matrix Data:\n')
-        for _, content in enumerate(results_cm.items()):
-            file.write(f'{content[0]}: {content[1]}\n')
-    return
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
