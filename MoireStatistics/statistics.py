@@ -158,7 +158,6 @@ def statistics(img_folder, model_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Detecta padrões de moiré em imagens usando a transformada de Haar e uma rede neural.")
     parser.add_argument("img_folder", type=str, help="Caminho para a pasta das imagens a serem analisadas.")
-    # parser.add_argument("positive", type=bool, help="Indica se possui ou nao padrao de Moire.")
     parser.add_argument("model_path", type=str, help="Caminho para o arquivo do modelo treinado (.h5).")
     args = parser.parse_args()
 
