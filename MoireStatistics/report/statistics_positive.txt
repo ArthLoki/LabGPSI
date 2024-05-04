@@ -1,0 +1,52 @@
+1. Confusion Matrix Data from all 5 positive images
+	    True Positive: 20
+	    True Negative: 0
+		False Positive: 0
+		False Negative: 0
+		Accuracy: 1.0
+		Precision: 1.0
+		Recall (Sensitivity): 1.0
+		F1 Score: 1.0
+
+
+2. Confusion Matrix Data and Metrics from all channels of all 5 positive images
+
+-----> Channel LL:
+		True Positive: 5
+		True Negative: 0
+		False Positive: 0
+		False Negative: 0
+		Accuracy: 1.0
+		Precision: 1.0
+		Recall (Sensitivity): 1.0
+		F1 Score: 1.0
+
+-----> Channel LH:
+		True Positive: 5
+		True Negative: 0
+		False Positive: 0
+		False Negative: 0
+		Accuracy: 1.0
+		Precision: 1.0
+		Recall (Sensitivity): 1.0
+		F1 Score: 1.0
+
+-----> Channel HL:
+		True Positive: 5
+		True Negative: 0
+		False Positive: 0
+		False Negative: 0
+		Accuracy: 1.0
+		Precision: 1.0
+		Recall (Sensitivity): 1.0
+		F1 Score: 1.0
+
+-----> Channel HH:
+		True Positive: 5
+		True Negative: 0
+		False Positive: 0
+		False Negative: 0
+		Accuracy: 1.0
+		Precision: 1.0
+		Recall (Sensitivity): 1.0
+		F1 Score: 1.0

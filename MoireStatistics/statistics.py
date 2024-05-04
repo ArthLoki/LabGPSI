@@ -1,139 +1,130 @@
 from moire.moire_detection_statistics import load_and_evaluate
 import os
+from time import sleep
+import argparse
 
-TEST_FOLDER = 'images/test'
-TEST_FOLDER_POSITIVE = 'images/test/positive'
-TEST_FOLDER_NEGATIVE = 'images/test/negative'
-
-MODEL_FOLDER = 'savedmodels'
 REPORT_FOLDER = 'report'
 
-ALLOWED_EXTENSIONS_FILE = {'png', 'jpg', 'jpeg', 'JPG'}
-ALLOWED_EXTENSIONS_MODEL = {'h5', 'keras'}
-
 ## Create folders if they don't exist
-if not os.path.exists(MODEL_FOLDER):
-    os.makedirs(MODEL_FOLDER)
-
-if not os.path.exists(TEST_FOLDER):
-    os.makedirs(TEST_FOLDER)
-    os.makedirs(TEST_FOLDER_NEGATIVE)
-    os.makedirs(TEST_FOLDER_POSITIVE)
-
 if not os.path.exists(REPORT_FOLDER):
     os.makedirs(REPORT_FOLDER)
 
+def update_counter_channels_cm(counter_channels_boolean, positive):
 
-## Check if the file extension is allowed
-def allowed_file(filename, filetype):
-    allowed_extensions = ALLOWED_EXTENSIONS_FILE if filetype == 0 else ALLOWED_EXTENSIONS_MODEL
+    counter_channels_cm = {
+        'LL': {"True Positive": 0, 'True Negative': 0, "False Positive": 0, "False Negative": 0},
+        'LH': {"True Positive": 0, 'True Negative': 0, "False Positive": 0, "False Negative": 0},
+        'HL': {"True Positive": 0, 'True Negative': 0, "False Positive": 0, "False Negative": 0},
+        'HH': {"True Positive": 0, 'True Negative': 0, "False Positive": 0, "False Negative": 0},
+    }
 
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    for channel, dict_boolean in counter_channels_boolean.items():
+        dict_channel_cm = counter_channels_cm.get(channel)
+        if dict_channel_cm is not None:
+            for boolean, count in dict_boolean.items():
+                if boolean:
+                    counter_channels_cm[channel]["True Positive" if positive else "False Positive"] += count
+                else:
+                    counter_channels_cm[channel]["False Negative" if positive else "True Negative"] += count
 
-def generateStatisticsFile(results_cm, results_channels, positive=True):
-    """
-        Structure of the statistics.txt file
+    return counter_channels_cm
 
-        "LL True": <counter>
-        "LL False": <counter>
-        "LH True": <counter>
-        "LH False": <counter>
-        "HL True": <counter>
-        "HL False": <counter>
-        "HH True": <counter>
-        "HH False": <counter>
-        True Positives: <TP>
-        True Negatives: <TN>
-        False Positives: <FP>
-        False Negatives: <FN>
-        Accuracy: <accuracy>/<total_files>
-        Precision: <precision>/<total_files>
-        Recall (Sensitivity): <recall>/<total_files>
-        F1 Score: <f1score>/<total_files>
+def calculate_metrics(counter_channels_cm):
+    channels_metrics = {
+        "LL": {"Accuracy": 0, 'Precision': 0, 'Recall (Sensitivity)': 0, 'F1 Score': 0},
+        "LH": {"Accuracy": 0, 'Precision': 0, 'Recall (Sensitivity)': 0, 'F1 Score': 0},
+        "HL": {"Accuracy": 0, 'Precision': 0, 'Recall (Sensitivity)': 0, 'F1 Score': 0},
+        "HH": {"Accuracy": 0, 'Precision': 0, 'Recall (Sensitivity)': 0, 'F1 Score': 0},
+    }
 
-        Total Files: <total_files>
-        """
+    for channel, dict_channel_cm in counter_channels_cm.items():
+        dict_channels_metrics = channels_metrics.get(channel)
+        if dict_channels_metrics is not None:
+            TN = dict_channel_cm.get("True Negative")
+            FP = dict_channel_cm.get("False Positive")
+            FN = dict_channel_cm.get("False Negative")
+            TP = dict_channel_cm.get("True Positive")
 
-    filename = 'statistics_positive.txt' if positive else 'statistics_negative.txt'
+            accuracy = (TP + TN) / (TP + TN + FP + FN)
+            precision = TP / (TP + FP) if (TP+FP) > 0 else 0.0
+            recall = TP / (TP + FN) if (TP+FN) > 0 else 0.0
+            f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
-    # Checking if the file exists
-    if filename not in os.listdir(REPORT_FOLDER):
-        createStatisticsFile(filename, results_cm, results_channels)
-    else:
-        updateStatisticsFile(filename, results_cm, results_channels)
-    return
+            channels_metrics[channel]["Accuracy"] = accuracy
+            channels_metrics[channel]["Precision"] = precision
+            channels_metrics[channel]["Recall (Sensitivity)"] = recall
+            channels_metrics[channel]["F1 Score"] = f1score
 
-def createStatisticsFile(filename, results_cm, results_channels):
-    # Creating file, because it does not exist
-    file = open(REPORT_FOLDER + filename, 'w')
-    total_files = 1
+    return channels_metrics
 
-    for channel, result in results_channels.items():
-        file.write(f'{channel}: {result}\n')
+def generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, img_folder, positive):
 
-    for key, content in results_cm.items():
-        if key in ['Accuracy', 'Precision', 'Recall (Sensitivity)', 'F1 Score']:
-            file.write(f'{key}: {content / total_files}\n')
+    print(f'\n\nGenerating {"Positive" if positive else "Negative"} Statistics...')
+    filename = f'statistics_{"positive" if positive else "negative"}.txt'
+
+    file = open(os.path.join(REPORT_FOLDER, filename), 'w')
+
+    file.write(f'1. Confusion Matrix Data from all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n\n')
+    for metric, value in counter_cm.items():
+        if metric in ['Accuracy', 'Precision', 'Recall (Sensitivity)', 'F1 Score']:
+            file.write(f'{metric}: {value/len(os.listdir(img_folder))}\n')
         else:
-            file.write(f'{key}: {content}\n')
+            file.write(f'{metric}: {value}\n')
 
-    file.write(f'Total Files: {total_files}\n')
-
+    file.write(f'\n\n2. Confusion Matrix Data and Metrics from all channels of all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n')
+    for channel, dict_cm in counter_channels_cm.items():
+        file.write(f'\n-----> Channel {channel}:\n\n')
+        for cm, value in dict_cm.items():
+            file.write(f'{cm}: {value}\n')
+        for metric, value in channels_metrics[channel].items():
+            file.write(f'{metric}: {value}\n')
     file.close()
     return
 
-def updateStatisticsFile(filename, results_cm, results_channels):
-    current_data = getCurrentStatisticsFileData(filename)
-    total_files = int(current_data.get("Total Files")) + 1 if current_data.get("Total Files") is not None else 1
-
-    # Opens the file to update the current data
-    file = open(REPORT_FOLDER + filename, 'w')
-
-    for channel, result in results_channels.items():
-        current_channel_data = current_data.get(channel)
-        if current_channel_data is not None:
-            file.write(f'{channel}: {int(current_channel_data) + result}\n')
-
-    for key, content in results_cm.items():
-        current_cm_data = current_data.get(key)
-        if current_cm_data is not None:
-            if key in ['Accuracy', 'Precision', 'Recall (Sensitivity)', 'F1 Score']:
-                file.write(f'{key}: {(int(current_cm_data) / total_files) + content}\n')
-            else:
-                file.write(f'{key}: {int(current_cm_data) + content}\n')
-
-    file.write(f'Total Files: {total_files}\n')
-
-    file.close()
-    return
-
-def getCurrentStatisticsFileData(filename):
-    # Opens the file to read the current data
-    file = open(REPORT_FOLDER + filename, 'r')
-
-    # Variable to save the data
-    current_data = {}
-
-    # Gets file data of each line
-    for line in file:
-        print(line)
-        lDados = line.strip().split(": ")
-        current_data[lDados[0]] = lDados[1]
-
-    file.close()
-    return current_data
-
-def statistics(positive=True):
+def statistics(img_folder, model_path):
     # Model file and Images files
-    model_name = os.listdir(MODEL_FOLDER)[0] if os.listdir(MODEL_FOLDER) else None
-    files = os.listdir(TEST_FOLDER_POSITIVE) if positive else os.listdir(TEST_FOLDER_NEGATIVE)
+    image_filenames = os.listdir(img_folder)
 
-    for file in files:
-        if allowed_file(file, 0) and model_name is not None:
+    if len(image_filenames) > 0:
+        if '\\' in img_folder:
+            list_img_folder = img_folder.split('\\')
+        else:
+            list_img_folder = img_folder.split('/')
+
+        counter_channels_boolean = {
+            "LL": {True: 0, False: 0},
+            "LH": {True: 0, False: 0},
+            "HL": {True: 0, False: 0},
+            "HH": {True: 0, False: 0},
+        }
+
+        counter_cm = {
+            "True Positive": 0,
+            "True Negative": 0,
+            "False Positive": 0,
+            "False Negative": 0,
+            "Accuracy": 0,
+            'Precision': 0,
+            'Recall (Sensitivity)': 0,
+            'F1 Score': 0,
+        }
+
+        index_current_file = 0
+        positive = False  # inicializa a variável como False
+        for file in image_filenames:
+            if list_img_folder[-1].lower() == 'positive':
+                positive = True
+            elif list_img_folder[-1].lower() == 'negative':
+                positive = False
+            else:
+                print("The image must have a previous classification.\n")
+                break
+
+            index_current_file += 1
+            print(f"\n\nProcessing {'positive' if positive else 'negative'} file ({file}): {index_current_file}/{len(os.listdir(img_folder))}...")
+
             # Chamada Moire
-            model_path = str(os.path.join(MODEL_FOLDER, model_name)).replace('\\', '/')
-            status = load_and_evaluate(model_path, TEST_FOLDER, file)
+            status = load_and_evaluate(model_path, img_folder, file)
 
             # Check if status returned an error
             if status.get('Error') is not None:
@@ -144,24 +135,31 @@ def statistics(positive=True):
             results_channels = status.get('results_channels')
             results_cm = status.get('results_cm')
 
-            # Checks if none of the results is None
-            if results_channels is not None and results_cm is not None:
-                generateStatisticsFile(results_cm, results_channels, positive)
-            else:
-                print('results_channels or results_cm is None')
-                break
-        else:
-            print('Extension file not allowed or model_name is None')
-            break
-    return
+            # Checks if none of the results is None and increment counter
+            if results_channels is not None:
+                for channel, result in results_channels.items():
+                    for key, count in result.items():
+                        counter_channels_boolean[channel][key] += count
 
-def main():
-    # Testing for positive images
-    statistics()
+            if results_cm is not None:
+                for key, content in results_cm.items():
+                    counter_cm[key] += content
 
-    # Testing for negative images
-    statistics(positive=False)
+            print(f"\nFinished processing {'positive' if positive else 'negative'} file {index_current_file}/{len(os.listdir(img_folder))}!")
+            sleep(0.5)
+
+        counter_channels_cm = update_counter_channels_cm(counter_channels_boolean, positive)
+        channels_metrics = calculate_metrics(counter_channels_cm)
+        generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, img_folder, positive)
+    else:
+        print("Given folder is empty.\n")
     return
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Detecta padrões de moiré em imagens usando a transformada de Haar e uma rede neural.")
+    parser.add_argument("img_folder", type=str, help="Caminho para a pasta das imagens a serem analisadas.")
+    # parser.add_argument("positive", type=bool, help="Indica se possui ou nao padrao de Moire.")
+    parser.add_argument("model_path", type=str, help="Caminho para o arquivo do modelo treinado (.h5).")
+    args = parser.parse_args()
+
+    statistics(args.img_folder, args.model_path)

@@ -34,18 +34,17 @@ def getCM(y_true, y_pred, count_channels):
         FN = confusion_mat[1, 0]
         TP = confusion_mat[1, 1]
 
-        accuracy = (TP + TN) / (TP + TN + FP + FN) if TP + TN + FP + FN > 0 else (TP + TN) / count_channels
-        precision = TP / (TP + FP) if TP + FP > 0 else TP
-        recall = TP / (TP + FN) if TP + FN > 0 else TP
-        f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 2 * (
-                    precision * recall)
+        accuracy = (TP + TN) / (TP + TN + FP + FN)
+        precision = TP / (TP + FP) if TP + FP > 0 else 0
+        recall = TP / (TP + FN) if TP + FN > 0 else 0
+        f1score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
         results_cm = {
             # 'Confusion Matrix': confusion_mat,
-            "True Positives": TP,
-            "True Negatives": TN,
-            "False Positives": FP,
-            "False Negatives": FN,
+            "True Positive": TP,
+            "True Negative": TN,
+            "False Positive": FP,
+            "False Negative": FN,
             "Accuracy": accuracy,
             'Precision': precision,
             'Recall (Sensitivity)': recall,
