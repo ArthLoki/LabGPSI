@@ -1,0 +1,15 @@
+TOTAIS
+Diretorio Positivas - 11 (total de fotos no diretorio de positivas)
+TP - 7 (total de fotos do diretorio consideradas positivas)
+FN - 4 (total de falso negativas)
+Lista de fotos falso negativas -
+IMG_20240412_181459356.jpg
+IMG_20240412_181532146.jpg
+IMG_20240412_181635323.jpg
+IMG_20240412_181712633.jpg
+
+CANAIS
+LL - TP - 10	FN - 1
+LH - TP - 9	FN - 2
+HL - TP - 9	FN - 2
+HH - TP - 8	FN - 3

@@ -1,52 +1,77 @@
-1. Confusion Matrix Data from all 5 positive images
-	    True Positive: 20
-	    True Negative: 0
-		False Positive: 0
-		False Negative: 0
-		Accuracy: 1.0
-		Precision: 1.0
-		Recall (Sensitivity): 1.0
-		F1 Score: 1.0
+1. Confusion Matrix Data from all 11 positive images
+
+True Positive: 36
+True Negative: 0
+False Positive: 0
+False Negative: 8
+Accuracy: 0.8181818181818182
+Precision: 0.9090909090909091
+Recall (Sensitivity): 0.8181818181818182
+F1 Score: 0.8528138528138527
 
 
-2. Confusion Matrix Data and Metrics from all channels of all 5 positive images
+2. Confusion Matrix Data and Metrics from all channels of all 11 positive images
 
 -----> Channel LL:
-		True Positive: 5
-		True Negative: 0
-		False Positive: 0
-		False Negative: 0
-		Accuracy: 1.0
-		Precision: 1.0
-		Recall (Sensitivity): 1.0
-		F1 Score: 1.0
+
+True Positive: 10
+True Negative: 0
+False Positive: 0
+False Negative: 1
+Accuracy: 0.9090909090909091
+Precision: 1.0
+Recall (Sensitivity): 0.9090909090909091
+F1 Score: 0.9523809523809523
 
 -----> Channel LH:
-		True Positive: 5
-		True Negative: 0
-		False Positive: 0
-		False Negative: 0
-		Accuracy: 1.0
-		Precision: 1.0
-		Recall (Sensitivity): 1.0
-		F1 Score: 1.0
+
+True Positive: 9
+True Negative: 0
+False Positive: 0
+False Negative: 2
+Accuracy: 0.8181818181818182
+Precision: 1.0
+Recall (Sensitivity): 0.8181818181818182
+F1 Score: 0.9
 
 -----> Channel HL:
-		True Positive: 5
-		True Negative: 0
-		False Positive: 0
-		False Negative: 0
-		Accuracy: 1.0
-		Precision: 1.0
-		Recall (Sensitivity): 1.0
-		F1 Score: 1.0
+
+True Positive: 9
+True Negative: 0
+False Positive: 0
+False Negative: 2
+Accuracy: 0.8181818181818182
+Precision: 1.0
+Recall (Sensitivity): 0.8181818181818182
+F1 Score: 0.9
 
 -----> Channel HH:
-		True Positive: 5
-		True Negative: 0
-		False Positive: 0
-		False Negative: 0
-		Accuracy: 1.0
-		Precision: 1.0
-		Recall (Sensitivity): 1.0
-		F1 Score: 1.0
+
+True Positive: 8
+True Negative: 0
+False Positive: 0
+False Negative: 3
+Accuracy: 0.7272727272727273
+Precision: 1.0
+Recall (Sensitivity): 0.7272727272727273
+F1 Score: 0.8421052631578948
+
+
+3. List of false negative images:
+
+IMG_20240412_181459356.jpg: ['LH', 'HH']
+IMG_20240412_181532146.jpg: ['HL']
+IMG_20240412_181635323.jpg: ['HH']
+IMG_20240412_181712633.jpg: ['LL', 'LH', 'HL', 'HH']
+
+Total False Negative: 4
+Total True Positive: 7
+
+
+4. Channel x Confusion Matrix Table:
+
+     TP  TN  FP  FN
+LL | 10	 0	 0	 1
+LH | 9	 0	 0	 2
+HL | 9	 0	 0	 2
+HH | 8	 0	 0	 3

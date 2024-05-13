@@ -9,6 +9,116 @@ REPORT_FOLDER = 'report'
 if not os.path.exists(REPORT_FOLDER):
     os.makedirs(REPORT_FOLDER)
 
+
+# Statistics File Generators
+def generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, falses_cm, img_folder, positive):
+    print(f'\n\nGenerating {"Positive" if positive else "Negative"} Statistics...')
+    filename = f'statistics_{"positive" if positive else "negative"}.txt'
+
+    file = open(os.path.join(REPORT_FOLDER, filename), 'w')
+
+    # Confusion Matrix
+    file.write(f'1. Confusion Matrix Data from all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n\n')
+    for metric, value in counter_cm.items():
+        if metric in ['Accuracy', 'Precision', 'Recall (Sensitivity)', 'F1 Score']:
+            file.write(f'{metric}: {value/len(os.listdir(img_folder))}\n')
+        else:
+            file.write(f'{metric}: {value}\n')
+
+    # Confusion Matrix per channel
+    file.write(f'\n\n2. Confusion Matrix Data and Metrics from all channels of all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n')
+    for channel, dict_cm in counter_channels_cm.items():
+        file.write(f'\n-----> Channel {channel}:\n\n')
+        for cm, value in dict_cm.items():
+            file.write(f'{cm}: {value}\n')
+        for metric, value in channels_metrics[channel].items():
+            file.write(f'{metric}: {value}\n')
+
+    # False Negatives/Positives Images
+    file.write(f'\n\n3. List of false {"negative" if positive else "positive"} images:\n\n')
+    for image_name, channels in falses_cm.items():
+        file.write(f'{image_name}: {channels}\n')
+
+    file.write(f'\nTotal False {"Negative" if positive else "Positive"}: {len(falses_cm.keys())}')
+    file.write(f'\nTotal True {"Positive" if positive else "Negative"}: {len(os.listdir(img_folder))-len(falses_cm.keys())}\n')
+
+    # Tabela Canal x Confusion Matrix
+    file.write(f'\n\n4. Channel x Confusion Matrix Table:\n\n')
+
+    channels_labels = list(counter_channels_cm.keys())  # row's label
+    metrics_labels = [metric.split(' ')[0][0]+metric.split(' ')[1][0]
+                    for metric in list(counter_channels_cm[channels_labels[0]].keys())] # column's label
+
+    file.write(' '*((2*len(channels_labels[0])) + 1))
+    file.write(f'  '.join(metrics_labels))
+
+    for channel in channels_labels:
+        metrics = '  '.join([str(num) for num in list(counter_channels_cm[channel].values())])
+        file.write(f"\n{channel} | {metrics}")
+
+    file.close()
+    return
+
+def generateStatisticsFileV2(counter_channels_cm, falses_cm, img_folder, positive):
+
+    print(f'\n\nGenerating {"Positive" if positive else "Negative"} Statistics V2...')
+    filename = f'statistics_{"positive" if positive else "negative"}_v2.txt'
+
+    file = open(os.path.join(REPORT_FOLDER, filename), 'w')
+
+    file.write('TOTAIS\n')
+    file.write(f'Diretorio {"Positivas" if positive else "Negativas"} - {len(os.listdir(img_folder))} (total de fotos no diretorio de {"positivas" if positive else "negativas"})\n')
+    file.write(f'TP - {len(os.listdir(img_folder))-len(falses_cm.keys())} (total de fotos do diretorio consideradas {"positivas" if positive else "negativas"})\n')
+    file.write(f'FN - {len(falses_cm.keys())} (total de falso {"negativas" if positive else "positivas"})\n')
+    file.write(f'Lista de fotos falso {"negativas" if positive else "positivas"} -\n')
+    for image_name, channels in falses_cm.items():
+        file.write(f'{image_name}\n')
+
+    file.write(f'\nCANAIS\n')
+    '''
+    Estrutura de counter_channels_counter:
+
+        counter_channels_cm = {
+            'LL': {"True Positive": <counter>, 'True Negative': <counter>, "False Positive": <counter>, "False Negative": <counter>},
+            'LH': {"True Positive": <counter>, 'True Negative': <counter>, "False Positive": <counter>, "False Negative": <counter>},
+            'HL': {"True Positive": <counter>, 'True Negative': <counter>, "False Positive": <counter>, "False Negative": <counter>},
+            'HH': {"True Positive": <counter>, 'True Negative': <counter>, "False Positive": <counter>, "False Negative": <counter>},
+        }
+    '''
+
+    channels_labels = list(counter_channels_cm.keys())
+    for channel in channels_labels:
+        metrics_values = list(counter_channels_cm[channel].values())
+        if positive:
+            metrics = ['TP', 'FN']
+            values = [metrics_values[0], metrics_values[3]]
+        else:
+            metrics = ['TN', 'FP']
+            values = [metrics_values[1], metrics_values[2]]
+
+        file.write(f"{channel} -\t{metrics[0]} - {values[0]}\t{metrics[1]} - {values[1]}\n")
+
+    file.close()
+    return
+
+
+# Calculating Data to Save
+def get_falses_cm(filename, channel, result, positive, falses_cm):
+    # Save filenames of the false negative or the false positive images
+    if positive:
+        if result[False] > 0:
+            if filename not in falses_cm.keys():
+                falses_cm[filename] = [channel]
+            else:
+                falses_cm[filename].append(channel)
+    else:
+        if result[True] > 0:
+            if filename not in false_positives:
+                falses_cm[filename] = [channel]
+            else:
+                falses_cm[filename].append(channel)
+    return falses_cm
+
 def update_counter_channels_cm(counter_channels_boolean, positive):
 
     counter_channels_cm = {
@@ -57,30 +167,8 @@ def calculate_metrics(counter_channels_cm):
 
     return channels_metrics
 
-def generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, img_folder, positive):
 
-    print(f'\n\nGenerating {"Positive" if positive else "Negative"} Statistics...')
-    filename = f'statistics_{"positive" if positive else "negative"}.txt'
-
-    file = open(os.path.join(REPORT_FOLDER, filename), 'w')
-
-    file.write(f'1. Confusion Matrix Data from all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n\n')
-    for metric, value in counter_cm.items():
-        if metric in ['Accuracy', 'Precision', 'Recall (Sensitivity)', 'F1 Score']:
-            file.write(f'{metric}: {value/len(os.listdir(img_folder))}\n')
-        else:
-            file.write(f'{metric}: {value}\n')
-
-    file.write(f'\n\n2. Confusion Matrix Data and Metrics from all channels of all {len(os.listdir(img_folder))} {"positive" if positive else "negative"} images\n')
-    for channel, dict_cm in counter_channels_cm.items():
-        file.write(f'\n-----> Channel {channel}:\n\n')
-        for cm, value in dict_cm.items():
-            file.write(f'{cm}: {value}\n')
-        for metric, value in channels_metrics[channel].items():
-            file.write(f'{metric}: {value}\n')
-    file.close()
-    return
-
+# Main Statistics
 def statistics(img_folder, model_path):
     # Model file and Images files
     image_filenames = os.listdir(img_folder)
@@ -109,6 +197,8 @@ def statistics(img_folder, model_path):
             'F1 Score': 0,
         }
 
+        falses_cm = {}
+
         index_current_file = 0
         positive = False  # inicializa a variável como False
         for file in image_filenames:
@@ -118,7 +208,7 @@ def statistics(img_folder, model_path):
                 positive = False
             else:
                 print("The image must have a previous classification.\n")
-                break
+                exit(1)
 
             index_current_file += 1
             print(f"\n\nProcessing {'positive' if positive else 'negative'} file ({file}): {index_current_file}/{len(os.listdir(img_folder))}...")
@@ -129,7 +219,7 @@ def statistics(img_folder, model_path):
             # Check if status returned an error
             if status.get('Error') is not None:
                 print(status.get('Error'))
-                break
+                exit(1)
 
             # Get results from channels and confusion matrix to create statistics
             results_channels = status.get('results_channels')
@@ -138,22 +228,39 @@ def statistics(img_folder, model_path):
             # Checks if none of the results is None and increment counter
             if results_channels is not None:
                 for channel, result in results_channels.items():
+                    falses_cm = get_falses_cm(file, channel, result, positive, falses_cm)
                     for key, count in result.items():
                         counter_channels_boolean[channel][key] += count
+            else:
+                print("ERROR in statistics: results_channels cannot be None.\n")
+                exit(1)
 
             if results_cm is not None:
                 for key, content in results_cm.items():
                     counter_cm[key] += content
+            else:
+                print("ERROR in statistics: results_cm cannot be None.\n")
+                exit(1)
 
-            print(f"\nFinished processing {'positive' if positive else 'negative'} file {index_current_file}/{len(os.listdir(img_folder))}!")
+            print(f"Finished processing {'positive' if positive else 'negative'} file {index_current_file}/{len(os.listdir(img_folder))}!")
             sleep(0.5)
 
         counter_channels_cm = update_counter_channels_cm(counter_channels_boolean, positive)
         channels_metrics = calculate_metrics(counter_channels_cm)
-        generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, img_folder, positive)
+
+        # generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, falses_cm, img_folder, positive)
+        generateStatisticsFileV2(counter_channels_cm, falses_cm, img_folder, positive)
+
+        # If you wanto to join both positive and negative files, run in terminal
+        # 'python ./statisticsFile.py <filename_positive> <filename_negative> <filename_both>'
+        # Sometimes, it's python3 instead of python
+
+        # OBS: All the filenames must be a path to the .txt fileS
     else:
         print("Given folder is empty.\n")
+        exit(1)
     return
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Detecta padrões de moiré em imagens usando a transformada de Haar e uma rede neural.")
