@@ -16,7 +16,7 @@ def normalize_and_resize(component, model_input_shape):
         return {'Error': 'normalize_and_resize error: ' + str(e)}
 
 
-def getCM(y_true, y_pred, count_channels):
+def getCM(y_true, y_pred):
     try:
         # Compute confusion matrix
         '''
@@ -81,7 +81,7 @@ def classify_image(model, image_path):
             y_pred.append(1 if results[suffix] else 0)
 
         print('results: ', results)
-        results_cm = getCM(y_true, y_pred, len(suffixes))
+        results_cm = getCM(y_true, y_pred)
 
         return {'results': results, 'results_cm': results_cm}
     except Exception as e:
