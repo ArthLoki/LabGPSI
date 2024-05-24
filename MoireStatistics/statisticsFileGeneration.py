@@ -100,6 +100,27 @@ def generateStatisticsFileV2(counter_channels_cm, falses_cm, img_folder, positiv
     return
 
 
+def generateStatisticsFileV3(images_filenames, results_images, positive):
+    print(f'\n\nGenerating {"Positive" if positive else "Negative"} Statistics V3...')
+    filename = f'statistics_{"positive" if positive else "negative"}_v3.txt'
+
+    file = open(os.path.join(REPORT_FOLDER, filename), 'w')
+
+    for i in range(len(images_filenames)):
+        if positive:
+            if not results_images[i]: cm_final_result = 'FN'
+            else: cm_final_result = 'TP'
+        else:
+            if not results_images[i]: cm_final_result = 'TN'
+            else: cm_final_result = 'FP'
+
+        content = f'Image {images_filenames[i]} ({i+1}/{len(images_filenames)}): {results_images[i]} ({cm_final_result})\n'
+        file.write(content)
+
+    file.close()
+    return
+
+
 # Calculating Data to Save
 def get_falses_cm(filename, channel, result, positive, falses_cm):
     # Save filenames of the false negative or the false positive images

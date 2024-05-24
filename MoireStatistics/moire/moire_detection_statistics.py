@@ -1,8 +1,9 @@
 import os
 import numpy as np
 from PIL import Image
-from keras.models import load_model
+# from keras.models import load_model
 import moire.haar2D as haar2D  # Importa o módulo com a função de transformada de Haar
+from moire.createTrainingData import fwdHaarDWT2D_pywt, normalize_and_convert_image  # Importando funções do script de treinamento
 from sklearn.metrics import confusion_matrix
 
 
@@ -63,7 +64,7 @@ def classify_image(model, image_path):
         img_array = np.array(img, dtype=float)
 
         # Aplica a transformada de Haar
-        cA, cH, cV, cD = haar2D.fwdHaarDWT2D(img_array)
+        cA, cH, cV, cD = fwdHaarDWT2D_pywt(img_array)
         components = [cA, cH, cV, cD]
         suffixes = ['LL', 'LH', 'HL', 'HH']
         results = {}
@@ -80,7 +81,7 @@ def classify_image(model, image_path):
             y_true.append(1)
             y_pred.append(1 if results[suffix] else 0)
 
-        print('results: ', results)
+        print('\n\nresults: ', results, '\n\n')
         results_cm = getCM(y_true, y_pred)
 
         return {'results': results, 'results_cm': results_cm}
@@ -104,10 +105,10 @@ def count_boolean_channels(results):
     return channels_boolean_counter
 
 
-def load_and_evaluate(model_path, test_dir, image_name):
+def load_and_evaluate(model, test_dir, image_name):
     try:
         # Carrega o modelo
-        model = load_model(model_path)
+        # model = load_model(model_path)
 
         # Classifica a imagem
         dict_results = classify_image(model, os.path.join(test_dir, image_name))

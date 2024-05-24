@@ -1,15 +1,31 @@
 TOTAIS
-Diretorio Positivas - 11 (total de fotos no diretorio de positivas)
-TP - 7 (total de fotos do diretorio consideradas positivas)
-FN - 4 (total de falso negativas)
+Diretorio Positivas - 20 (total de fotos no diretorio de positivas)
+TP - 0 (total de fotos do diretorio consideradas positivas)
+FN - 20 (total de falso negativas)
 Lista de fotos falso negativas -
-IMG_20240412_181459356.jpg
-IMG_20240412_181532146.jpg
-IMG_20240412_181635323.jpg
-IMG_20240412_181712633.jpg
+2024.jpg
+20240409.jpg
+20240409_113619.jpg
+20240409_113701.jpg
+20240409_113704.jpg
+20240409_113742.jpg
+20240409_1138.jpg
+20240409_113813.jpg
+20240409_113849.jpg
+20240409_113957.jpg
+20240409_114003.jpg
+20240409_114006.jpg
+20240409_114007.jpg
+20240409_114008.jpg
+20240409_114025.jpg
+20240409_114031.jpg
+20240409_114057.jpg
+202404409_11402.jpg
+202404409_114531.jpg
+IMG_0133.jpg
 
 CANAIS
-LL - TP - 10	FN - 1
-LH - TP - 9	FN - 2
-HL - TP - 9	FN - 2
-HH - TP - 8	FN - 3
+LL -	TP - 0	FN - 20
+LH -	TP - 0	FN - 20
+HL -	TP - 0	FN - 20
+HH -	TP - 0	FN - 20

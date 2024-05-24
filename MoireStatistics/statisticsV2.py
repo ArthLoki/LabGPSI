@@ -1,24 +1,13 @@
 # from moire.moire_detection_statistics import load_and_evaluate
-from moire.new_test_moire import load_and_evaluate
-from statisticsFileGeneration import (generateStatisticsFileV2,
-                                      generateStatisticsFile,
-                                      get_falses_cm,
-                                      update_counter_channels_cm,
-                                      calculate_metrics)
+from moire.new_test_moire import load_and_evaluate, load_trained_model
+from statisticsFileGeneration import (generateStatisticsFileV3,
+                                      # generateStatisticsFileV2, generateStatisticsFile,
+                                      # get_falses_cm, update_counter_channels_cm, calculate_metrics
+                                      )
 import os
 from time import sleep
 import argparse
-from moire.mCNN import createModel  # Importando a função de criação do modelo
-from keras.models import load_model
-
-
-def load_trained_model(weights_path):
-    try:
-        model = createModel(375, 500, 1, 1)  # Assumindo que estas são as dimensões esperadas pelo modelo
-        model.load_weights(weights_path)
-        return model
-    except Exception as e:
-        return {'Error': 'load_trained_model: ' + str(e)}
+# from keras.models import load_model
 
 
 # Main Statistics
@@ -41,25 +30,7 @@ def statistics(img_folder, model_path):
         else:
             list_img_folder = img_folder.split('/')
 
-        counter_channels_boolean = {
-            "LL": {True: 0, False: 0},
-            "LH": {True: 0, False: 0},
-            "HL": {True: 0, False: 0},
-            "HH": {True: 0, False: 0},
-        }
-
-        counter_cm = {
-            "True Positive": 0,
-            "True Negative": 0,
-            "False Positive": 0,
-            "False Negative": 0,
-            "Accuracy": 0,
-            'Precision': 0,
-            'Recall (Sensitivity)': 0,
-            'F1 Score': 0,
-        }
-
-        falses_cm = {}
+        results_images = []
 
         index_current_file = 0
         positive = False  # inicializa a variável como False
@@ -77,6 +48,7 @@ def statistics(img_folder, model_path):
 
             # Chamada Moire
             status = load_and_evaluate(model, img_folder, file)
+            print('status: ', status)
 
             # Check if status returned an error
             if status.get('Error') is not None:
@@ -84,34 +56,14 @@ def statistics(img_folder, model_path):
                 exit(1)
 
             # Get results from channels and confusion matrix to create statistics
-            results_channels = status.get('results_channels')
-            results_cm = status.get('results_cm')
-
-            # Checks if none of the results is None and increment counter
-            if results_channels is not None:
-                for channel, result in results_channels.items():
-                    falses_cm = get_falses_cm(file, channel, result, positive, falses_cm)
-                    for key, count in result.items():
-                        counter_channels_boolean[channel][key] += count
-            else:
-                print("ERROR in statistics: results_channels cannot be None.\n")
-                exit(1)
-
-            if results_cm is not None:
-                for key, content in results_cm.items():
-                    counter_cm[key] += content
-            else:
-                print("ERROR in statistics: results_cm cannot be None.\n")
-                exit(1)
+            result = status.get('moire')
+            results_images.append(result)
 
             print(f"Finished processing {'positive' if positive else 'negative'} file {index_current_file}/{len(os.listdir(img_folder))}!")
             sleep(0.5)
 
-        counter_channels_cm = update_counter_channels_cm(counter_channels_boolean, positive)
-        channels_metrics = calculate_metrics(counter_channels_cm)
-
-        generateStatisticsFile(counter_cm, counter_channels_cm, channels_metrics, falses_cm, img_folder, positive)
-        generateStatisticsFileV2(counter_channels_cm, falses_cm, img_folder, positive)
+        print(results_images)
+        generateStatisticsFileV3(image_filenames, results_images, positive)
 
         # If you wanto to join both positive and negative files, run in terminal
         # 'python ./statisticsFile.py <filename_positive> <filename_negative> <filename_both>'

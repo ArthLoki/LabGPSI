@@ -1,77 +1,93 @@
-1. Confusion Matrix Data from all 11 positive images
+1. Confusion Matrix Data from all 20 positive images
 
-True Positive: 36
+True Positive: 0
 True Negative: 0
 False Positive: 0
-False Negative: 8
-Accuracy: 0.8181818181818182
-Precision: 0.9090909090909091
-Recall (Sensitivity): 0.8181818181818182
-F1 Score: 0.8528138528138527
+False Negative: 80
+Accuracy: 0.0
+Precision: 0.0
+Recall (Sensitivity): 0.0
+F1 Score: 0.0
 
 
-2. Confusion Matrix Data and Metrics from all channels of all 11 positive images
+2. Confusion Matrix Data and Metrics from all channels of all 20 positive images
 
 -----> Channel LL:
 
-True Positive: 10
+True Positive: 0
 True Negative: 0
 False Positive: 0
-False Negative: 1
-Accuracy: 0.9090909090909091
-Precision: 1.0
-Recall (Sensitivity): 0.9090909090909091
-F1 Score: 0.9523809523809523
+False Negative: 20
+Accuracy: 0.0
+Precision: 0.0
+Recall (Sensitivity): 0.0
+F1 Score: 0.0
 
 -----> Channel LH:
 
-True Positive: 9
+True Positive: 0
 True Negative: 0
 False Positive: 0
-False Negative: 2
-Accuracy: 0.8181818181818182
-Precision: 1.0
-Recall (Sensitivity): 0.8181818181818182
-F1 Score: 0.9
+False Negative: 20
+Accuracy: 0.0
+Precision: 0.0
+Recall (Sensitivity): 0.0
+F1 Score: 0.0
 
 -----> Channel HL:
 
-True Positive: 9
+True Positive: 0
 True Negative: 0
 False Positive: 0
-False Negative: 2
-Accuracy: 0.8181818181818182
-Precision: 1.0
-Recall (Sensitivity): 0.8181818181818182
-F1 Score: 0.9
+False Negative: 20
+Accuracy: 0.0
+Precision: 0.0
+Recall (Sensitivity): 0.0
+F1 Score: 0.0
 
 -----> Channel HH:
 
-True Positive: 8
+True Positive: 0
 True Negative: 0
 False Positive: 0
-False Negative: 3
-Accuracy: 0.7272727272727273
-Precision: 1.0
-Recall (Sensitivity): 0.7272727272727273
-F1 Score: 0.8421052631578948
+False Negative: 20
+Accuracy: 0.0
+Precision: 0.0
+Recall (Sensitivity): 0.0
+F1 Score: 0.0
 
 
 3. List of false negative images:
 
-IMG_20240412_181459356.jpg: ['LH', 'HH']
-IMG_20240412_181532146.jpg: ['HL']
-IMG_20240412_181635323.jpg: ['HH']
-IMG_20240412_181712633.jpg: ['LL', 'LH', 'HL', 'HH']
+2024.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113619.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113701.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113704.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113742.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_1138.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113813.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113849.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_113957.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114003.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114006.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114007.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114008.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114025.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114031.jpg: ['LL', 'LH', 'HL', 'HH']
+20240409_114057.jpg: ['LL', 'LH', 'HL', 'HH']
+202404409_11402.jpg: ['LL', 'LH', 'HL', 'HH']
+202404409_114531.jpg: ['LL', 'LH', 'HL', 'HH']
+IMG_0133.jpg: ['LL', 'LH', 'HL', 'HH']
 
-Total False Negative: 4
-Total True Positive: 7
+Total False Negative: 20
+Total True Positive: 0
 
 
 4. Channel x Confusion Matrix Table:
 
      TP  TN  FP  FN
-LL | 10	 0	 0	 1
-LH | 9	 0	 0	 2
-HL | 9	 0	 0	 2
-HH | 8	 0	 0	 3
+LL | 0  0  0  20
+LH | 0  0  0  20
+HL | 0  0  0  20
+HH | 0  0  0  20
