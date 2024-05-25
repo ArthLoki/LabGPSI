@@ -1,6 +1,3 @@
-#To detect Moire ́ patternzs, images are first decomposed using Wavelet decomposition (refer to file '') and trained using multi-input Convolutional neural network. The strength of the proposed CNN model is, it uses the LL intensity image (from the Wavelet decomposition) as a weight parameter for the Moire ́ pattern, thereby approximating the spatial spread of the Moire ́ pattern in the image. Usage of CNN model performs better than frequency thresholding approach as the model is trained considering diverse scenarios and it is able to distinguish between the high frequency of background texture and the Moire ́ pattern.
-
-
 import os
 import tensorflow as tf
 import numpy as np
@@ -18,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from mCNN import createModel
 from tensorflow.keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint
-
+from DataGenerator import DataGenerator
 
 # Constants
 WIDTH = 500#384
@@ -26,53 +23,21 @@ HEIGHT = 375#512
 
 
 def scaleData(inp, minimum, maximum):
-    minMaxScaler = preprocessing.MinMaxScaler(copy=True, feature_range=(minimum,maximum))
+    minMaxScaler = preprocessing.MinMaxScaler(copy=True, feature_range=(minimum, maximum))
     inp = inp.reshape(-1, 1)
     inp = minMaxScaler.fit_transform(inp)
 
     return inp
 
 
-
-
-# - read positive and negative training data
-# - create X and Y from training data
-
-def main(args):
-    positiveImagePath = args.positiveImages
-    negativeImagePath = args.negativeImages
-    numEpochs = args.epochs
-    positiveTrainImagePath = args.trainingDataPositive
-    negativeTrainImagePath = args.trainingDataNegative
-
-    # Os caminhos para as imagens de treinamento e teste devem ser fornecidos para os geradores
-    train_gen = readWaveletData(positiveTrainImagePath, negativeTrainImagePath, mode='train')
-    val_gen = readWaveletData(positiveTrainImagePath, negativeTrainImagePath, mode='validation')
-    test_gen = readWaveletData(positiveImagePath, negativeImagePath, mode='test')
-
-    # As dimensões dos dados devem ser configuradas corretamente
-    height, width = WIDTH, HEIGHT  # Substitua por suas dimensões reais
-    depth = 4  # Número de canais (presumindo que cada componente da wavelet é um canal)
-    num_classes = 2  # Número de classes (0 para positivo, 1 para negativo)
-
-    # Supondo que trainCNNModel e evaluate são suas funções que treinam e avaliam o modelo
-    model = trainCNNModel(train_gen, val_gen, test_gen, height, width, depth, num_classes, numEpochs)
-
-    evaluate(model, test_gen)
-
-# As funções readWaveletData, trainCNNModel, e evaluate devem ser definidas para lidar com geradores e configuração apropriada de treinamento, validação e teste
-
-
-
-
-
-
+# As funções readWaveletData, trainCNNModel, e evaluate devem ser definidas para lidar com geradores
+# e configuração apropriada de treinamento, validação e teste
 def readAndScaleImage(f, customStr, trainImagePath, X_LL, X_LH, X_HL, X_HH, X_index, Y, sampleIndex, sampleVal):
     fileName = (os.path.splitext(f)[0])
-    fLL = (f.replace(fileName, fileName + customStr + '_LL')).replace('.jpg','.tiff')
-    fLH = (f.replace(fileName, fileName + customStr + '_LH')).replace('.jpg','.tiff')
-    fHL = (f.replace(fileName, fileName + customStr + '_HL')).replace('.jpg','.tiff')
-    fHH = (f.replace(fileName, fileName + customStr + '_HH')).replace('.jpg','.tiff')
+    fLL = (f.replace(fileName, fileName + customStr + '_LL')).replace('.jpg', '.tiff')
+    fLH = (f.replace(fileName, fileName + customStr + '_LH')).replace('.jpg', '.tiff')
+    fHL = (f.replace(fileName, fileName + customStr + '_HL')).replace('.jpg', '.tiff')
+    fHH = (f.replace(fileName, fileName + customStr + '_HH')).replace('.jpg', '.tiff')
 
     try:
         imgLL = Image.open(join(trainImagePath, fLL))
@@ -93,19 +58,20 @@ def readAndScaleImage(f, customStr, trainImagePath, X_LL, X_LH, X_HL, X_HH, X_in
     imgHL = scaleData(imgHL, -1, 1)
     imgHH = scaleData(imgHH, -1, 1)
 
-    imgVector = imgLL.reshape(1, WIDTH*HEIGHT)
+    imgVector = imgLL.reshape(1, WIDTH * HEIGHT)
     X_LL[sampleIndex, :] = imgVector
-    imgVector = imgLH.reshape(1, WIDTH*HEIGHT)
+    imgVector = imgLH.reshape(1, WIDTH * HEIGHT)
     X_LH[sampleIndex, :] = imgVector
-    imgVector = imgHL.reshape(1, WIDTH*HEIGHT)
+    imgVector = imgHL.reshape(1, WIDTH * HEIGHT)
     X_HL[sampleIndex, :] = imgVector
-    imgVector = imgHH.reshape(1, WIDTH*HEIGHT)
+    imgVector = imgHH.reshape(1, WIDTH * HEIGHT)
     X_HH[sampleIndex, :] = imgVector
 
     Y[sampleIndex, 0] = sampleVal;
     X_index[sampleIndex, 0] = sampleIndex;
 
     return True
+
 
 def readImageSet(imageFiles, trainImagePath, X_LL, X_LH, X_HL, X_HH, X_index, Y, sampleIndex, bClass):
 
@@ -131,6 +97,10 @@ def readImageSet(imageFiles, trainImagePath, X_LL, X_LH, X_HL, X_HH, X_index, Y,
 
 
 def readWaveletData(positiveImagePath, negativeImagePath, mode='train', batch_size=32):
+    # Usage example:
+    # train_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='train')
+    # val_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='validation')
+    # test_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='test')
 
     # Determine the correct path based on the mode
     if mode == 'train':
@@ -179,24 +149,17 @@ def readWaveletData(positiveImagePath, negativeImagePath, mode='train', batch_si
 
     return data_generator()
 
-# Usage example:
-# train_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='train')
-# val_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='validation')
-# test_gen = readWaveletData('path/to/positive/images', 'path/to/negative/images', mode='test')
+
+# # Usage readWaveletData
+# WIDTH, HEIGHT = 128, 128  # Example dimensions, set these to your actual values
+# data_gen, total_samples = readWaveletData('path/to/positive/images', 'path/to/negative/images',
+#                                           'path/to/positive/training/images', 'path/to/negative/training/images')
+# for data in data_gen():
+#     X_LL, X_LH, X_HL, X_HH, Y = data
+#     print(X_LL, X_LH, X_HL, X_HH, Y)  # Process each sample as needed
 
 
-# Usage
-WIDTH, HEIGHT = 128, 128  # Example dimensions, set these to your actual values
-data_gen, total_samples = readWaveletData('path/to/positive/images', 'path/to/negative/images',
-                                          'path/to/positive/training/images', 'path/to/negative/training/images')
-for data in data_gen():
-    X_LL, X_LH, X_HL, X_HH, Y = data
-    print(X_LL, X_LH, X_HL, X_HH, Y)  # Process each sample as needed
-
-
-
-
-# Here, we perform index based splitting and use those indices to split the our multi-input datasets. This is done because the CNN model is multi-input network
+# Here, we perform index based splitting and use those indices to split our multi-input datasets. This is done because the CNN model is multi-input network
 def splitTrainTestDataForBands(inputData, X_train_ind, X_test_ind):
     X_train = np.zeros((len(X_train_ind), WIDTH*HEIGHT))
     for i in range(len(X_train_ind)):
@@ -215,8 +178,6 @@ def countPositiveSamplesAfterSplit(trainData):
         if(trainData[i,0] == 0):
             count = count + 1
     return count
-
-
 
 
 def trainTestSplit(X_LL, X_LH, X_HL, X_HH, X_index, Y, imageCount):
@@ -274,42 +235,38 @@ def trainTestSplit(X_LL, X_LH, X_HL, X_HH, X_index, Y, imageCount):
     return X_LL_train, X_LH_train, X_HL_train, X_HH_train, Y_train, X_LL_test, X_LH_test, X_HL_test, X_HH_test, Y_test, height, width, depth, num_classes
 
 
-
-
-
-
-
 # Configuração da Estratégia de Múltiplas GPUs
-def trainCNNModel(train_gen, train_steps, val_gen, val_steps, test_gen, test_steps, height, width, depth, num_classes, num_epochs):
-    strategy = tf.distribute.MirroredStrategy()  # Definindo a estratégia de múltiplas GPUs
+def trainCNNModel(X_LL_train, X_LH_train, X_HL_train, X_HH_train, Y_train, X_LL_test, X_LH_test, X_HL_test, X_HH_test,
+                Y_test, height, width, depth, num_classes, num_epochs):
+
+    strategy = tf.distribute.MirroredStrategy()  # Define the strategy for multiple GPUs
     print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 
-    batch_size = 32 * strategy.num_replicas_in_sync  # Ajustar o tamanho do batch de acordo com o número de GPUs
+    batch_size = 32 * strategy.num_replicas_in_sync  # Adjust batch size according to the number of GPUs
 
-    with strategy.scope():  # Aplicação da estratégia de distribuição
+    with strategy.scope():  # Apply the distribution strategy
         model = createModel(height, width, depth, num_classes)
         model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-
     checkPointFolder = 'checkPoint'
+    checkpoint_name = checkPointFolder + '/Weights-{epoch:03d}--{val_loss:.5f}.keras'
+
+    checkpoint = ModelCheckpoint(checkpoint_name, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    callbacks_list = [checkpoint, early_stopping]
+
     if not os.path.exists(checkPointFolder):
         os.makedirs(checkPointFolder)
-    checkpoint_name = checkPointFolder + '/Weights-{epoch:03d}--{val_loss:.5f}.keras'
-    checkpoint = ModelCheckpoint(checkpoint_name, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
-    callbacks_list = [checkpoint]
 
-    # Treinamento do modelo usando geradores
-    model.fit(train_gen,
-              steps_per_epoch=train_steps,
-              epochs=num_epochs, verbose=1,
-              validation_data=val_gen,
-              validation_steps=val_steps,
-              callbacks=callbacks_list)
+    # Create data generators
+    train_generator = DataGenerator(X_LL_train, X_LH_train, X_HL_train, X_HH_train, Y_train, batch_size)
+    test_generator = DataGenerator(X_LL_test, X_LH_test, X_HL_test, X_HH_test, Y_test, batch_size)
 
-    # Avaliação do modelo usando o gerador de teste
-    score, acc = model.evaluate(test_gen, steps=test_steps, verbose=1)
+    # Model training
+    model.fit(train_generator, epochs=num_epochs, verbose=1, validation_data=test_generator, callbacks=callbacks_list)
 
-    # Salvar o modelo
+    score, acc = model.evaluate(test_generator, verbose=1)
+
     model.save('moirePattern3CNN_.keras')
 
     return model
@@ -368,12 +325,11 @@ def evaluate(model, test_gen):
     print(start + 'Accuracy:       ' + end + "{:.4f} %".format(100 * accuracy))
     print(start + 'Precision:      ' + end + "{:.4f} %".format(100 * precision))
     print(start + 'Recall:         ' + end + "{:.4f} %".format(100 * recall))
-    return
 
 # Assumindo que 'test_gen' é um gerador que produz lotes de dados e etiquetas.
 
 
-
+# Main
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
@@ -423,23 +379,3 @@ if __name__ == '__main__':
 
     # Chamada à função com os caminhos corretos
     data_gen, total_samples = readWaveletData(positiveImagePath, negativeImagePath)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -3,7 +3,7 @@ import argparse
 import os
 import numpy as np
 from PIL import Image
-from moire.haar2D import fwdHaarDWT2D_pywt
+from haar2D import fwdHaarDWT2D_pywt
 import multiprocessing
 import logging
 from tqdm import tqdm
@@ -98,7 +98,7 @@ def createTrainingData(imagePath, trainFolderPath):
 def main(args):
     try:
         if args.train == 0:
-            trainFolders = ('./trainDataPositive', './trainDataNegative')
+            trainFolders = ('./trainingDataPositive', './trainingDataNegative')
         else:
             trainFolders = ('./testDataPositive', './testDataNegative')
 
