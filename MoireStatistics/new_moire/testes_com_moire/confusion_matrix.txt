@@ -1,0 +1,3 @@
+Matriz de Confusão:
+VP: 248 FN: 1252
+FP: 41 VN: 1459
