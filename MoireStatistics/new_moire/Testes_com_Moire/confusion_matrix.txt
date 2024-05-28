@@ -1,3 +1,0 @@
-Matriz de Confusão:
-VP: 0 FN: 20
-FP: 0 VN: 20

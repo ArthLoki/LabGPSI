@@ -19,8 +19,6 @@ console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
 
-
-
 def process_image(args):
     f, mainFolder, trainFolder = args
     processed_count = 0
@@ -62,10 +60,6 @@ def transformImageAndSave(image, f, customStr, path):
         return False
 
 
-
-
-
-
 def createTrainingData(imagePath, trainFolderPath):
     try:
         imageFiles = [f for f in os.listdir(imagePath) if os.path.isfile(os.path.join(imagePath, f))]
@@ -95,6 +89,7 @@ def createTrainingData(imagePath, trainFolderPath):
         logging.error(f'Error creating training data: {e}')
         return 0
 
+
 def main(args):
     try:
         if args.train == 0:
@@ -110,12 +105,14 @@ def main(args):
     except Exception as e:
         logging.error(f'Unhandled exception in main: {e}')
 
+
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('positiveImages', type=str, help='Directory with positive (Moiré pattern) images.')
     parser.add_argument('negativeImages', type=str, help='Directory with negative (Normal) images.')
     parser.add_argument('train', type=int, help='0 = train, 1 = test')
     return parser.parse_args(argv)
+
 
 if __name__ == '__main__':
     main(parse_arguments(sys.argv[1:]))
