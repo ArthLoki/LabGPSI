@@ -9,8 +9,8 @@ from train_lotes import load_image
 
 # Configurações do modelo e das imagens
 config = {
-    "width": 500,
-    "height": 375,
+    "width": 512,
+    "height": 384,
     "depth": 1,
     "num_classes": 2,
     "batch_size": 32,  
@@ -22,8 +22,15 @@ def load_trained_model(weights_path, config):
     return model
 
 
-def image_data_predictor(image_files, batch_size):
+
+
+
+def image_data_predictor(positive_dir, negative_dir, batch_size):
     """ Gera batches de dados com quatro componentes de imagens para predição. """
+    # Coleta os arquivos dos diretórios positive e negative
+    image_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(positive_dir) for f in filenames if f.endswith('.tiff')]
+    image_files += [os.path.join(dp, f) for dp, dn, filenames in os.walk(negative_dir) for f in filenames if f.endswith('.tiff')]
+    
     num_samples = len(image_files) // 4
     for offset in range(0, num_samples, batch_size):
         # Seleciona um subconjunto de arquivos de acordo com o tamanho do batch
@@ -51,54 +58,41 @@ def image_data_predictor(image_files, batch_size):
         yield np.stack([X_LL, X_LH, X_HL, X_HH], axis=-1)
 
 
-
-
-def process_directories(positive_dir, negative_dir, model):
+def process_directory(positive_dir, negative_dir, model):
     labels = []
     predictions = []
-    # Combina os diretórios e as categorias correspondentes em uma lista de tuplas
-    categories = [(positive_dir, 1), (negative_dir, 0)]
-    
-    for directory, label in categories:
-        print(f"Processando diretório: {directory} com label: {label}")
-        # Agrupamento dos caminhos dos componentes por raiz do nome do arquivo
-        component_files = {}
-        for filename in os.listdir(directory):
-            # Isola a raiz do nome do arquivo e o sufixo do componente
-            root_name = "_".join(filename.split('_')[:-1])
-            print(f"Componentes para {root_name}: {components}")
-            if root_name not in component_files:
-                component_files[root_name] = []
-            component_files[root_name].append(os.path.join(directory, filename))
-        
-        # Processa cada grupo de componentes
-        for root_namo, components in component_files.values():
-            if len(components) == 4:  # Garante que todos os 4 componentes estejam presentes
-                # Ordena os componentes para garantir a ordem LL, LH, HL, HH
-                components_sorted = sorted(components, key=lambda x: x.split('_')[-1].split('.')[0])
-                pred = process_and_classify_image(components_sorted, model)
-                predictions.append(pred)
-                labels.append(label)
+
+    # Processa as imagens no diretório 'positive'
+    for filename in os.listdir(positive_dir):
+        image_path = os.path.join(positive_dir, filename)
+        pred = process_and_classify_image(image_path, model)
+        predictions.append(pred)
+        labels.append(1)  # Etiqueta para imagens positivas
+
+    # Processa as imagens no diretório 'negative'
+    for filename in os.listdir(negative_dir):
+        image_path = os.path.join(negative_dir, filename)
+        pred = process_and_classify_image(image_path, model)
+        predictions.append(pred)
+        labels.append(0)  # Etiqueta para imagens negativas
 
     return labels, predictions
 
+
+
 def process_and_classify_image(component_paths, model):
-    # A função agora espera que 'component_paths' seja uma lista com caminhos para as imagens dos componentes LL, LH, HL, HH
-    # Carrega cada componente como um array de ponto flutuante normalizado
-    print(f"Classificando imagem com caminhos de componentes: {component_paths}")
-    #components = [np.expand_dims(np.array(Image.open(path), dtype=np.float32) / 255.0, axis=-1) for path in component_paths]
-    for path in component_paths:
-        img = Image.open(path)
-        img_array = np.array(img, dtype=np.float32) / 255.0
-        img_array = np.expand_dims(img_array, axis=-1)
-        components.append(img_array)
-        print(f"Formato do componente {path}: {img_array.shape}")
-    # Predição usando o modelo, passando cada componente como uma entrada separada
-    prediction = model.predict([components[0], components[1], components[2], components[3]])
-    print(f"Predição: {prediction}")
+    # A função supõe que 'component_paths' é uma lista com caminhos para as imagens dos componentes LL, LH, HL, HH
+    # Carrega os componentes diretamente como arrays de ponto flutuante e normaliza-os
+    components = [np.array(Image.open(path), dtype=np.float32) / 255.0 for path in component_paths]
+
+    # Assumindo que cada componente foi normalizado e está pronto para ser empilhado como entrada
+    inputs = np.stack(components, axis=-1).reshape(1, 375, 500, 4)  # Reformatar para o formato de entrada esperado pelo modelo
+
+    # Fazer a predição
+    prediction = model.predict(inputs)
+
     # Retorna se a imagem é classificada como contendo padrão de moiré (1) ou não (0)
     return 1 if prediction[0][0] > 0.5 else 0
-
 
 
 def print_and_save_confusion_matrix(cm, true_labels, predicted_labels, file_name):
@@ -127,12 +121,13 @@ def print_and_save_confusion_matrix(cm, true_labels, predicted_labels, file_name
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Por favor, forneça os diretórios das imagens 'positive' e 'negative' e o caminho do modelo.")
+        print("Por favor, forneça os diretórios das imagens positivas e negativas e o caminho do modelo.")
     else:
-        print("Carregando modelo...")
-        model = load_trained_model(sys.argv[3], config)
-        print("Modelo carregado. Processando diretórios...")
-        true_labels, predicted_labels = process_directories(sys.argv[1], sys.argv[2], model)
+        positive_dir = sys.argv[1]
+        negative_dir = sys.argv[2]
+        model_path = sys.argv[3]
+        model = load_trained_model(model_path, config)
+        true_labels, predicted_labels = process_directory(positive_dir, negative_dir, model)
         cm = confusion_matrix(true_labels, predicted_labels, labels=[1, 0])
         print_and_save_confusion_matrix(cm, true_labels, predicted_labels, 'confusion_matrix.txt')
         print("Matriz de confusão e métricas salvas em 'confusion_matrix.txt'.")

@@ -14,8 +14,8 @@ from keras.callbacks import ModelCheckpoint #
 
 # Configurações do modelo e das imagens
 config = {
-    "width": 500,
-    "height": 375,
+    "width": 512,
+    "height": 384,
     "depth": 1,
     "num_classes": 2,
 }
@@ -57,38 +57,43 @@ def prepare_data_paths(positive_path, negative_path):
         return [], []
 
     # Desagrupa os arquivos para retornar a lista plana, necessária para o gerador de dados
-
-
     train_files = [item for sublist in train_groups for item in sublist]
     val_files = [item for sublist in val_groups for item in sublist]
 
     return train_files, val_files
 
 
+
+
 def main(args):
+
     # Extract paths and epochs from the command line arguments
     positiveImagePath = (args.trainDataPositive)
     negativeImagePath = (args.trainDataNegative)
     numEpochs = (args.epochs)
     batch_size = (args.batch_size) #por default vai ser 32, use sempre um multiplo de 4.
 
-    # Prepare data paths and get train/validation splits
-    print("Preparando caminhos de dados...")
-    train_files, val_files = prepare_data_paths(args.trainDataPositive, args.trainDataNegative)
-    print(f"Quantidade de arquivos de treino: {len(train_files)}, Quantidade de arquivos de validação: {len(val_files)}")
 
+
+
+    # Prepare data paths and get train/validation splits
+    train_files, val_files = prepare_data_paths(args.trainDataPositive, args.trainDataNegative)
+
+
+    
     # Create data generators for training and validation sets
     train_generator = image_data_generator(train_files, batch_size=batch_size)
     validation_generator = image_data_generator(val_files, batch_size=batch_size)
-
+    
+    
     # Calculate steps per epoch and validation steps based on batch size
     steps_per_epoch = int(np.ceil(len(train_files) / batch_size))
     validation_steps = int(np.ceil(len(val_files) / batch_size))
 
+    
     # Train the model
     model = trainCNNModel(train_generator, steps_per_epoch, validation_generator, validation_steps,config["height"], config["width"], config["depth"], config["num_classes"], args.epochs)
-    return
-
+     
 
 def load_image(file_path):
     """ Carrega uma imagem, a converte para um array NumPy, redimensiona e normaliza para um tamanho uniforme. """
@@ -97,24 +102,28 @@ def load_image(file_path):
         return img_array / 255.0  # Normaliza para o intervalo 0-1
 
 
+
+
+
 def image_data_generator(image_files, batch_size=32):
     """ Gera batches de dados com quatro componentes de imagens e seus rótulos. """
     num_samples = len(image_files) // 4  # Considera que cada imagem contribui com 4 componentes
     while True:
         for offset in range(0, num_samples, batch_size):
-            # Pega 4x mais arquivos (LL, LH, HL, HH) dentro do range do batch
-            #batch_files = image_files[offset*4:(offset + batch_size)*4]
-            batch_files = image_files[offset*4:(min(offset + batch_size, num_samples) * 4)]
-            # print("Exemplo de arquivos ordenados para verificação:", batch_files[:8])  # Mostra os primeiros 8 para verificar a ordem
+            batch_files = image_files[offset*4:(offset + batch_size)*4]
+            # Ordena os arquivos de forma que a sequência LL, LH, HL, HH seja mantida
+            batch_files_sorted = sorted(batch_files, key=lambda x: (x.split('_')[-1].replace('.tiff', ''), x.split('_')[-2]))
             X_LL, X_LH, X_HL, X_HH, Y = [], [], [], [], []
-            for i in range(0, len(batch_files), 4):
-                # Assume que os arquivos estão corretamente ordenados como LL, LH, HL, HH
-                x_ll = load_image(batch_files[i])
-                x_lh = load_image(batch_files[i+1])
-                x_hl = load_image(batch_files[i+2])
-                x_hh = load_image(batch_files[i+3])
+            if len(batch_files_sorted) % 4 != 0:  # Certifica-se de que o lote está completo
+                continue
+            for i in range(0, len(batch_files_sorted), 4):
+                # Carrega as imagens na ordem correta
+                x_ll = load_image(batch_files_sorted[i])
+                x_lh = load_image(batch_files_sorted[i+1])
+                x_hl = load_image(batch_files_sorted[i+2])
+                x_hh = load_image(batch_files_sorted[i+3])
                 # Adiciona a categoria baseada no prefixo do nome do arquivo
-                label = 1 if 'p' in batch_files[i].split('/')[-1] else 0
+                label = 1 if 'p' in batch_files_sorted[i].split('/')[-1] else 0
                 X_LL.append(x_ll)
                 X_LH.append(x_lh)
                 X_HL.append(x_hl)
@@ -122,8 +131,8 @@ def image_data_generator(image_files, batch_size=32):
                 Y.append(label)
             # Verifica se a quantidade de componentes corresponde ao tamanho do batch
             if len(X_LL) == batch_size:
-               # yield ([np.array(X_LL), np.array(X_LH), np.array(X_HL), np.array(X_HH)], np.array(Y))
-                yield ({'input_layer': np.array(X_LL), 'input_layer_1': np.array(X_LH), 'input_layer_2': np.array(X_HL), 'input_layer_3': np.array(X_HH)}, np.array(Y))
+                yield ({'input_layer': np.array(X_LL), 'input_layer_1': np.array(X_LH),
+                        'input_layer_2': np.array(X_HL), 'input_layer_3': np.array(X_HH)}, np.array(Y))
 
 
 # Configuração da Estratégia de Múltiplas GPUs
@@ -149,12 +158,9 @@ def trainCNNModel(generator, steps_per_epoch, validation_data, validation_steps,
         callbacks_list = [checkpoint]
 
         # Training the model
-        print("Iniciando o treinamento do modelo...")
         model.fit(generator, steps_per_epoch=steps_per_epoch, epochs=num_epochs, validation_data=validation_data, validation_steps=validation_steps, callbacks=callbacks_list)
-        print("Treinamento concluído.")
 
     # Evaluate the model on the validation data
-    print("Iniciando avaliação do modelo...")
     score, acc = model.evaluate(validation_data, steps=validation_steps, verbose=1)
     print(f"Validation score: {score}, Accuracy: {acc}")
 
@@ -162,6 +168,7 @@ def trainCNNModel(generator, steps_per_epoch, validation_data, validation_steps,
     model.save('moirePattern3CNN_.keras')
     
     return model
+
 
 
 def parse_arguments(argv):
@@ -183,6 +190,7 @@ def parse_arguments(argv):
 
 
 if __name__ == '__main__':
+
     try:
         # Check and display the number of available GPUs.
         num_gpus = len(tf.config.list_physical_devices('GPU'))

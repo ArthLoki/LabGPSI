@@ -12,8 +12,8 @@ import psutil
 
 # Configurações do modelo e das imagens
 config = {
-    "width": 500,
-    "height": 375,
+    "width": 512,
+    "height": 384,
 }
 
 

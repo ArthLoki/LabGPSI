@@ -100,30 +100,30 @@ def load_image(file_path):
 def image_data_generator(image_files, batch_size=32):
     """ Gera batches de dados com quatro componentes de imagens e seus rótulos. """
     num_samples = len(image_files) // 4  # Considera que cada imagem contribui com 4 componentes
-    while True:
-        for offset in range(0, num_samples, batch_size):
-            # Pega 4x mais arquivos (LL, LH, HL, HH) dentro do range do batch
-            #batch_files = image_files[offset*4:(offset + batch_size)*4]
-            batch_files = image_files[offset*4:(min(offset + batch_size, num_samples) * 4)]
-            # print("Exemplo de arquivos ordenados para verificação:", batch_files[:8])  # Mostra os primeiros 8 para verificar a ordem
-            X_LL, X_LH, X_HL, X_HH, Y = [], [], [], [], []
-            for i in range(0, len(batch_files), 4):
-                # Assume que os arquivos estão corretamente ordenados como LL, LH, HL, HH
-                x_ll = load_image(batch_files[i])
-                x_lh = load_image(batch_files[i+1])
-                x_hl = load_image(batch_files[i+2])
-                x_hh = load_image(batch_files[i+3])
-                # Adiciona a categoria baseada no prefixo do nome do arquivo
-                label = 1 if 'p' in batch_files[i].split('/')[-1] else 0
-                X_LL.append(x_ll)
-                X_LH.append(x_lh)
-                X_HL.append(x_hl)
-                X_HH.append(x_hh)
-                Y.append(label)
-            # Verifica se a quantidade de componentes corresponde ao tamanho do batch
-            if len(X_LL) == batch_size:
-               # yield ([np.array(X_LL), np.array(X_LH), np.array(X_HL), np.array(X_HH)], np.array(Y))
-                yield ({'input_layer': np.array(X_LL), 'input_layer_1': np.array(X_LH), 'input_layer_2': np.array(X_HL), 'input_layer_3': np.array(X_HH)}, np.array(Y))
+    # while True:
+    for offset in range(0, num_samples, batch_size):
+        # Pega 4x mais arquivos (LL, LH, HL, HH) dentro do range do batch
+        #batch_files = image_files[offset*4:(offset + batch_size)*4]
+        batch_files = image_files[offset*4:(min(offset + batch_size, num_samples) * 4)]
+       # print("Exemplo de arquivos ordenados para verificação:", batch_files[:8])  # Mostra os primeiros 8 para verificar a ordem
+        X_LL, X_LH, X_HL, X_HH, Y = [], [], [], [], []
+        for i in range(0, len(batch_files), 4):
+            # Assume que os arquivos estão corretamente ordenados como LL, LH, HL, HH
+            x_ll = load_image(batch_files[i])
+            x_lh = load_image(batch_files[i+1])
+            x_hl = load_image(batch_files[i+2])
+            x_hh = load_image(batch_files[i+3])
+            # Adiciona a categoria baseada no prefixo do nome do arquivo
+            label = 1 if 'p' in batch_files[i].split('/')[-1] else 0
+            X_LL.append(x_ll)
+            X_LH.append(x_lh)
+            X_HL.append(x_hl)
+            X_HH.append(x_hh)
+            Y.append(label)
+        # Verifica se a quantidade de componentes corresponde ao tamanho do batch
+        if len(X_LL) == batch_size:
+           # yield ([np.array(X_LL), np.array(X_LH), np.array(X_HL), np.array(X_HH)], np.array(Y))
+            yield ({'input_layer': np.array(X_LL), 'input_layer_1': np.array(X_LH), 'input_layer_2': np.array(X_HL), 'input_layer_3': np.array(X_HH)}, np.array(Y))
 
 
 # Configuração da Estratégia de Múltiplas GPUs
